@@ -8,6 +8,13 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include <ew/shader.h>
+#include <ew/model.h>
+#include <ew/camera.h>
+#include <ew/transform.h>
+#include <ew/cameraController.h>
+#include <ew/texture.h>
+
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 GLFWwindow* initWindow(const char* title, int width, int height);
 void drawUI();
@@ -18,8 +25,62 @@ int screenHeight = 720;
 float prevFrameTime;
 float deltaTime;
 
+ew::Camera camera;
+ew::CameraController cameraController;
+ew::Transform monkeyTransform;
+
+struct Material {
+	float ambient = 1.0, diffuse = 0.5, specular = 0.5, shiness = 128;
+} material;
+
+void querty(ew::Shader shader, ew::Model model, GLuint texture) {
+	// 1. Pipeline Definition 
+	
+	//After window initialization...
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK); //Back face culling
+	glEnable(GL_DEPTH_TEST); //Depth testing
+
+	// 2. GFX Pass
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	shader.use();
+
+	monkeyTransform.rotation = glm::rotate(monkeyTransform.rotation, deltaTime, glm::vec3(0.0, 1.0, 0.0));
+
+	shader.setInt("_MonkeyTexture", 0);
+	shader.setFloat("_Material.ambient", material.ambient);
+	shader.setFloat("_Material.diffuse", material.diffuse);
+	shader.setFloat("_Material.specular", material.specular);
+	shader.setFloat("_Material.shininess", material.shiness);
+	shader.setVec3("_EyePos", camera.position);
+	shader.setMat4("_Model", monkeyTransform.modelMatrix());
+	shader.setMat4("_ViewProj", camera.projectionMatrix() * camera.viewMatrix());
+
+	model.draw();
+}
+
+void resetCamera(ew::Camera* camera, ew::CameraController* controller) {
+	camera->position = glm::vec3(0, 0, 5.0f);
+	camera->target = glm::vec3(0);
+	controller->yaw = controller->pitch = 0;
+}
+
 int main() {
 	GLFWwindow* window = initWindow("Assignment 0", screenWidth, screenHeight);
+	GLuint brickTexture = ew::loadTexture("assets/brick_color.jpg");
+
+	ew::Shader litShader = ew::Shader("assets/lit.vert", "assets/lit.frag");
+	ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
+
+	camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
+	camera.target = glm::vec3(0.0f, 0.0f, 0.0f); //Look at the center of the scene
+	camera.aspectRatio = (float)screenWidth / screenHeight;
+	camera.fov = 60.0f; //Vertical field of view, in degrees
+
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
 	while (!glfwWindowShouldClose(window)) {
@@ -31,7 +92,10 @@ int main() {
 
 		//RENDER
 		glClearColor(0.6f,0.8f,0.92f,1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// Main Render
+		querty(litShader, monkeyModel, brickTexture);
+		cameraController.move(window, &camera, deltaTime);
 
 		drawUI();
 
@@ -46,7 +110,17 @@ void drawUI() {
 	ImGui::NewFrame();
 
 	ImGui::Begin("Settings");
-	ImGui::Text("Add Controls Here!");
+	if (ImGui::Button("Reset Camera")) {
+		resetCamera(&camera, &cameraController);
+	}
+
+	if (ImGui::CollapsingHeader("Material")) {
+		ImGui::SliderFloat("AmbientK", &material.ambient, 0.0f, 1.0f);
+		ImGui::SliderFloat("DiffuseK", &material.diffuse, 0.0f, 1.0f);
+		ImGui::SliderFloat("SpecularK", &material.specular, 0.0f, 1.0f);
+		ImGui::SliderFloat("Shininess", &material.shiness, 2.0f, 1024.0f);
+	}
+
 	ImGui::End();
 
 	ImGui::Render();
