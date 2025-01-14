@@ -29,7 +29,10 @@ ew::Camera camera;
 ew::CameraController cameraController;
 ew::Transform monkeyTransform;
 
+// Customization UI Elements
 glm::vec3 ambientColor = glm::vec3(0.3, 0.4, 0.46);
+float modelSpinSpeed = 1.0f;
+bool canModelSpin = true;
 
 struct Material {
 	float ambient = 1.0, diffuse = 0.5, specular = 0.5, shiness = 128;
@@ -51,7 +54,9 @@ void querty(ew::Shader shader, ew::Model model, GLuint texture) {
 
 	shader.use();
 
-	monkeyTransform.rotation = glm::rotate(monkeyTransform.rotation, deltaTime, glm::vec3(0.0, 1.0, 0.0));
+	if (canModelSpin) {
+		monkeyTransform.rotation = glm::rotate(monkeyTransform.rotation, deltaTime * modelSpinSpeed, glm::vec3(0.0, 1.0, 0.0));
+	}
 
 	shader.setInt("_MonkeyTexture", 0);
 	shader.setFloat("_Material.ambient", material.ambient);
@@ -126,10 +131,17 @@ void drawUI() {
 		ImGui::SliderFloat("Specular", &material.specular, 0.0f, 1.0f);
 		ImGui::SliderFloat("Shininess", &material.shiness, 2.0f, 1024.0f);
 	}
+
+	// Wanted to create as many options as possible for later usage
 	if (ImGui::CollapsingHeader("Ambient Color")) {
 		ImGui::SliderFloat("R", &ambientColor.x, 0.0f, 1.0f);
 		ImGui::SliderFloat("G", &ambientColor.y, 0.0f, 1.0f);
 		ImGui::SliderFloat("B", &ambientColor.z, 0.0f, 1.0f);
+	}
+
+	if (ImGui::CollapsingHeader("Model Spinning")) {
+		ImGui::Checkbox("Is Model Spinning", &canModelSpin);
+		ImGui::SliderFloat("Model Spin Rate", &modelSpinSpeed, 1.0f, 5.0f);
 	}
 
 	if (ImGui::Button("Reset Camera")) {
@@ -137,6 +149,10 @@ void drawUI() {
 	}
 	if (ImGui::Button("Reset Material")) {
 		resetMaterial(&material);
+	}
+
+	if (ImGui::Button("Reset Ambient Color")) {
+		ambientColor = glm::vec3(0.3, 0.4, 0.46);
 	}
 
 	ImGui::End();
