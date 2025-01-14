@@ -3,6 +3,8 @@
 layout (location = 0) in vec3 vPos; // Vertex pos in model space
 layout (location = 1) in vec3 vNormal; // Vertex pos in model space
 layout (location = 2) in vec2 vTexCoord; // Vertex Texture Coords (UV)
+layout (location = 3) in vec3 aTangent;
+layout (location = 4) in vec3 aBitTanget;
 
 uniform mat4 _Model;
 uniform mat4 _ViewProj;

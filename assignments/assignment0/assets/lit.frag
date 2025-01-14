@@ -25,6 +25,8 @@ uniform Material _Material;
 
 void main() {
 	vec3 norm = normalize(fs_in.WorldNormal);
+	norm = texture(_MonkeyTexture, fs_in.TexCoord).rgb;
+	norm = normalize(norm * 2.0 - 1.0);
 	vec3 toLight = -_LightDirection;
 
 	float diffuseFactor = max(dot(norm, toLight), 0.0);
