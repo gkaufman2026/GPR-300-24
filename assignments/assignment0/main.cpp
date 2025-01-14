@@ -29,6 +29,8 @@ ew::Camera camera;
 ew::CameraController cameraController;
 ew::Transform monkeyTransform;
 
+glm::vec3 ambientColor = glm::vec3(0.3, 0.4, 0.46);
+
 struct Material {
 	float ambient = 1.0, diffuse = 0.5, specular = 0.5, shiness = 128;
 } material;
@@ -56,6 +58,7 @@ void querty(ew::Shader shader, ew::Model model, GLuint texture) {
 	shader.setFloat("_Material.diffuse", material.diffuse);
 	shader.setFloat("_Material.specular", material.specular);
 	shader.setFloat("_Material.shininess", material.shiness);
+	shader.setVec3("_AmbientColor", ambientColor);
 	shader.setVec3("_EyePos", camera.position);
 	shader.setMat4("_Model", monkeyTransform.modelMatrix());
 	shader.setMat4("_ViewProj", camera.projectionMatrix() * camera.viewMatrix());
@@ -67,6 +70,13 @@ void resetCamera(ew::Camera* camera, ew::CameraController* controller) {
 	camera->position = glm::vec3(0, 0, 5.0f);
 	camera->target = glm::vec3(0);
 	controller->yaw = controller->pitch = 0;
+}
+
+void resetMaterial(Material* material) {
+	material->ambient = 1.0;
+	material->diffuse = 0.5;
+	material->specular = 0.5;
+	material->shiness = 128;
 }
 
 int main() {
@@ -110,15 +120,23 @@ void drawUI() {
 	ImGui::NewFrame();
 
 	ImGui::Begin("Settings");
+	if (ImGui::CollapsingHeader("Material")) {
+		ImGui::SliderFloat("Ambient", &material.ambient, 0.0f, 1.0f);
+		ImGui::SliderFloat("Diffuse", &material.diffuse, 0.0f, 1.0f);
+		ImGui::SliderFloat("Specular", &material.specular, 0.0f, 1.0f);
+		ImGui::SliderFloat("Shininess", &material.shiness, 2.0f, 1024.0f);
+	}
+	if (ImGui::CollapsingHeader("Ambient Color")) {
+		ImGui::SliderFloat("R", &ambientColor.x, 0.0f, 1.0f);
+		ImGui::SliderFloat("G", &ambientColor.y, 0.0f, 1.0f);
+		ImGui::SliderFloat("B", &ambientColor.z, 0.0f, 1.0f);
+	}
+
 	if (ImGui::Button("Reset Camera")) {
 		resetCamera(&camera, &cameraController);
 	}
-
-	if (ImGui::CollapsingHeader("Material")) {
-		ImGui::SliderFloat("AmbientK", &material.ambient, 0.0f, 1.0f);
-		ImGui::SliderFloat("DiffuseK", &material.diffuse, 0.0f, 1.0f);
-		ImGui::SliderFloat("SpecularK", &material.specular, 0.0f, 1.0f);
-		ImGui::SliderFloat("Shininess", &material.shiness, 2.0f, 1024.0f);
+	if (ImGui::Button("Reset Material")) {
+		resetMaterial(&material);
 	}
 
 	ImGui::End();
