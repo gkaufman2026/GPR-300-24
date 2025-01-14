@@ -4,7 +4,7 @@ out vec4 FragColor;
 
 in Surface {
 	vec3 WorldPos, WorldNormal;
-	vec2 TexCoord;
+	vec2 UV;
 } fs_in;
 
 uniform sampler2D _MonkeyTexture;
@@ -24,22 +24,21 @@ struct Material {
 uniform Material _Material;
 
 void main() {
-	vec3 norm = normalize(fs_in.WorldNormal);
-	norm = texture(_MonkeyTexture, fs_in.TexCoord).rgb;
-	norm = normalize(norm * 2.0 - 1.0);
-	vec3 toLight = -_LightDirection;
+	vec3 normal = normalize(fs_in.WorldNormal);
+	normal = texture(_MonkeyTexture, fs_in.UV).rgb;
+	vec3 lightDirection = -_LightDirection;
 
-	float diffuseFactor = max(dot(norm, toLight), 0.0);
+	float diffuseFactor = max(dot(normal, lightDirection), 0.0);
 
-	vec3 toEye = normalize(_EyePos - fs_in.WorldPos);
+	vec3 eyeDirection = normalize(_EyePos - fs_in.WorldPos);
 
-	vec3 h = normalize(toLight + toEye);
-	float specFactor = pow(max(dot(norm, h), 0.0), _Material.shininess);
+	vec3 h = normalize(lightDirection + eyeDirection);
+	float specularFactor = pow(max(dot(normal, h), 0.0), _Material.shininess);
 
-	vec3 lightColor = (_Material.diffuse * diffuseFactor + _Material.specular * specFactor) * _LightColor;
+	vec3 lightColor = (_Material.diffuse * diffuseFactor + _Material.specular * specularFactor) * _LightColor;
 	lightColor += _AmbientColor * _Material.ambient;
 
-	vec3 objectColor = texture(_MonkeyTexture, fs_in.TexCoord).rgb;
+	vec3 objectColor = texture(_MonkeyTexture, fs_in.UV).rgb;
 
 	FragColor = vec4(objectColor * lightColor, 1.0);
 }
