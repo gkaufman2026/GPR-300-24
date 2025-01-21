@@ -20,4 +20,4 @@ target_link_libraries(worksession0 PUBLIC core IMGUI assimp)
 target_include_directories(worksession0 PUBLIC ${CORE_INC_DIR} ${stb_INCLUDE_DIR})
 
 #Trigger asset copy when assignment0 is built
-add_dependencies(worksession0 copyAssetsA0)
+add_dependencies(worksession0 copyAssetsW0)
