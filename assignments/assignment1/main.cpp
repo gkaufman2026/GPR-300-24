@@ -202,7 +202,8 @@ int main() {
 				blurShader.setInt("strength", blurStrength);
 				break;
 			case 3:
-				//sg_apply_pipeline(inverseRenderer.pipeline);
+				inverseShader.use();
+				inverseShader.setInt("texture0", 0);
 				break;
 			case 4:
 				//sg_apply_pipeline(chromaticAberrationRenderer.pipeline);
