@@ -212,7 +212,8 @@ int main() {
 				//sg_apply_pipeline(crtRenderer.pipeline);
 				break;
 			default:
-				//sg_apply_pipeline(framebuffer.pipeline);
+				fullscreenShader.use();
+				fullscreenShader.setInt("texture0", 0);
 				break;
 		}
 
