@@ -10,7 +10,7 @@ file(
  *.c *.cpp
 )
 #Copies this assignment1's asset folder to bin when it is built
-add_custom_target(copyAssetsW1 ALL COMMAND ${CMAKE_COMMAND} -E copy_directory
+add_custom_target(copyAssetsA1 ALL COMMAND ${CMAKE_COMMAND} -E copy_directory
 ${CMAKE_CURRENT_SOURCE_DIR}/assets/
 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets/)
 
@@ -20,4 +20,4 @@ target_link_libraries(assignment1 PUBLIC core IMGUI assimp)
 target_include_directories(assignment1 PUBLIC ${CORE_INC_DIR} ${stb_INCLUDE_DIR})
 
 #Trigger asset copy when assignment0 is built
-add_dependencies(assignment1 copyAssetsW1)
+add_dependencies(assignment1 copyAssetsA1)

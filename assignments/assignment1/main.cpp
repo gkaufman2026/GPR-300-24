@@ -30,6 +30,16 @@ static float quadVertices[] = {
         1.0f,  1.0f, 1.0f, 1.0f,
 };
 
+static int effectIndex = 0;
+static std::vector<std::string> postProcessingEffects = {
+    "None",
+    "Grayscale",
+    "Kernel Blur",
+    "Inverse",
+    "Chromatic Aberration",
+    "CRT",
+};
+
 //Global state
 int screenWidth = 1080;
 int screenHeight = 720;
@@ -42,6 +52,7 @@ ew::Transform monkeyTransform;
 
 // Customization UI Elements
 glm::vec3 ambientColor = glm::vec3(0.3, 0.4, 0.46);
+float blurStrength = 1;
 float modelSpinSpeed = 1.0f;
 bool canModelSpin = true;
 
@@ -109,12 +120,14 @@ int main() {
 	GLFWwindow* window = initWindow("Assignment 1", screenWidth, screenHeight);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 	GLuint brickTexture = ew::loadTexture("assets/brick_color.jpg");
+	
+	std::string test = "C:/Users/gkaufman/Desktop/GPR-300-24/assignments/assignment1/assets/";
 
 	ew::Shader litShader = ew::Shader("assets/lit.vert", "assets/lit.frag");
 	ew::Shader fullscreenShader = ew::Shader("assets/fullscreen.vert", "assets/fullscreen.frag");
-	ew::Shader inverseShader = ew::Shader("assets/inverse.vert", "assets/inverse.frag");
-	ew::Shader grayscaleShader = ew::Shader("assets/fullscreen.vert", "assets/grayscale.frag");
-	ew::Shader blurShader = ew::Shader("assets/blur.vert", "assets/blur.frag");
+	ew::Shader inverseShader = ew::Shader(test + "inverse.vert", test + "inverse.frag");
+	ew::Shader grayscaleShader = ew::Shader(test + "fullscreen.vert", test + "grayscale.frag");
+	ew::Shader blurShader = ew::Shader(test + "blur.vert", test + "blur.frag");
 	ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
 
 	camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
@@ -177,8 +190,31 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// render fullscreen quad
-		grayscaleShader.use();
-		grayscaleShader.setInt("texture0", 0);
+		
+		switch (effectIndex) {
+			case 1:
+				grayscaleShader.use();
+				grayscaleShader.setInt("texture0", 0);
+				break;
+			case 2:
+				blurShader.use();
+				blurShader.setInt("texture0", 0);
+				blurShader.setInt("strength", blurStrength);
+				break;
+			case 3:
+				//sg_apply_pipeline(inverseRenderer.pipeline);
+				break;
+			case 4:
+				//sg_apply_pipeline(chromaticAberrationRenderer.pipeline);
+				break;
+			case 5:
+				//sg_apply_pipeline(crtRenderer.pipeline);
+				break;
+			default:
+				//sg_apply_pipeline(framebuffer.pipeline);
+				break;
+		}
+
 		glBindVertexArray(fullscreenQuad.vao);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, framebuffer.color0);
@@ -215,6 +251,19 @@ void drawUI() {
 	if (ImGui::CollapsingHeader("Model Spinning")) {
 		ImGui::Checkbox("Is Model Spinning", &canModelSpin);
 		ImGui::SliderFloat("Model Spin Rate", &modelSpinSpeed, 1.0f, 5.0f);
+	}
+
+	if (ImGui::BeginCombo("Effect", postProcessingEffects[effectIndex].c_str())) {
+		for (auto n = 0; n < postProcessingEffects.size(); ++n) {
+			auto isSelected = (postProcessingEffects[effectIndex] == postProcessingEffects[n]);
+			if (ImGui::Selectable(postProcessingEffects[n].c_str(), isSelected)) {
+				effectIndex = n;
+			}
+			if (isSelected) {
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
 	}
 
 	if (ImGui::Button("Reset Camera")) {
