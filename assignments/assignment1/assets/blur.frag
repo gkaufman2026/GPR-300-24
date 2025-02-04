@@ -4,6 +4,7 @@ out vec4 FragColor;
 in vec2 vs_texcoord;
 
 uniform sampler2D texture0;
+uniform float strength;
 
 const float offset = (1.0 / 300.0);
 const vec2 offsets[9] = vec2[](
@@ -20,7 +21,6 @@ const vec2 offsets[9] = vec2[](
 	vec2(offset, -offset)
 );
 
-const float strength = 16.0;
 const float kernel[9] = float[](
 	1.0, 1.0, 1.0, 
 	1.0, 1.0, 1.0,

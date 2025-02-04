@@ -47,7 +47,6 @@ static std::vector<std::string> postProcessingEffects = {
 	"Lens Distortion", // 12
 	"Film Grain", // 13
 	"Screen-space Fog" // 14
-    "CRT", // 15
 };
 
 //Global state
@@ -62,7 +61,7 @@ ew::Transform monkeyTransform;
 
 // Customization UI Elements
 glm::vec3 ambientColor = glm::vec3(0.3, 0.4, 0.46);
-float blurStrength = 1;
+float blurStrength = 16;
 float modelSpinSpeed = 1.0f;
 bool canModelSpin = true;
 
@@ -139,6 +138,7 @@ int main() {
 	ew::Shader grayscaleShader = ew::Shader("assets/fullscreen.vert", "assets/grayscale.frag");
 	ew::Shader blurShader = ew::Shader("assets/blur.vert", "assets/blur.frag");
 
+	ew::Shader chromatic = ew::Shader("assets/chromatic.vert", "assets/chromatic.frag");
 	ew::Shader edgeShader = ew::Shader("assets/edge_detection.vert", "assets/edge_detection.frag");
 
 	ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
@@ -220,20 +220,22 @@ int main() {
 			case 5:
 				blurShader.use();
 				blurShader.setInt("texture0", 0);
-				blurShader.setInt("strength", blurStrength);
+				blurShader.setFloat("strength", blurStrength);
 				break;
 			case 6:
 				break;
 			case 7:
 				edgeShader.use();
 				edgeShader.setInt("texture0", 0);
-				//edgeShader.setInt("strength", blurStrength);
+				edgeShader.setFloat("strength", blurStrength);
 				break;
 			case 8:
 				break;
 			case 9:
 				break;
 			case 10:
+				chromatic.use();
+				chromatic.setInt("texture0", 0);
 				break;
 			case 11:
 				break;
@@ -242,8 +244,6 @@ int main() {
 			case 13:
 				break;
 			case 14:
-				break;
-			case 15:
 				break;
 			default:
 				fullscreenShader.use();
@@ -300,6 +300,16 @@ void drawUI() {
 			}
 		}
 		ImGui::EndCombo();
+	}
+
+	switch (effectIndex) {
+	case 3:
+	case 4:
+	case 5:
+		ImGui::SliderFloat("Blur Strength", &blurStrength, 0.0f, 32.0f);
+		break;
+	default:
+		break;
 	}
 
 	if (ImGui::Button("Reset Camera")) {
