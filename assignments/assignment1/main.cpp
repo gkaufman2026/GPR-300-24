@@ -35,10 +35,10 @@ static std::vector<std::string> postProcessingEffects = {
     "None", // 0
     "Grayscale", // 1 - DONE
 	"Inverse", // 2 - DONE
-	"Box Blur", // 3
-	"Gaussian Blur", // 4 
+	"Box Blur", // 3 - DONE
+	"Gaussian Blur", // 4 - DONE
     "Kernel Blur", // 5 - DONE
-	"Sharpen", // 6
+	"Sharpen", // 6 - DONE
 	"Edge Detect", // 7 - DONE
 	"HDR", // 8
 	"Gamma Correction", // 9
@@ -141,6 +141,7 @@ int main() {
 	ew::Shader blurShader = ew::Shader("assets/blur.vert", "assets/blur.frag");
 	ew::Shader gaussian = ew::Shader("assets/blur.vert", "assets/gaussian.frag");
 	ew::Shader box = ew::Shader("assets/blur.vert", "assets/box.frag");
+	ew::Shader sharpen = ew::Shader("assets/blur.vert", "assets/sharpen.frag");
 	ew::Shader chromatic = ew::Shader("assets/chromatic.vert", "assets/chromatic.frag");
 	ew::Shader edgeShader = ew::Shader("assets/edge_detection.vert", "assets/edge_detection.frag");
 
@@ -231,6 +232,8 @@ int main() {
 				blurShader.setFloat("strength", blurStrength);
 				break;
 			case 6:
+				sharpen.use();
+				sharpen.setInt("texture0", 0);
 				break;
 			case 7:
 				edgeShader.use();
