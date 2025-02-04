@@ -32,12 +32,22 @@ static float quadVertices[] = {
 
 static int effectIndex = 0;
 static std::vector<std::string> postProcessingEffects = {
-    "None",
-    "Grayscale",
-    "Kernel Blur",
-    "Inverse",
-    "Chromatic Aberration",
-    "CRT",
+    "None", // 0
+    "Grayscale", // 1
+	"Inverse", // 2
+	"Box Blur", // 3
+	"Gaussian Blur", // 4
+    "Kernel Blur", // 5
+	"Sharpen", // 6
+	"Edge Detect", // 7
+	"HDR", // 8
+	"Gamma Correction", // 9
+    "Chromatic Aberration", // 10
+	"Vignette", // 11
+	"Lens Distortion", // 12
+	"Film Grain", // 13
+	"Screen-space Fog" // 14
+    "CRT", // 15
 };
 
 //Global state
@@ -128,6 +138,9 @@ int main() {
 	ew::Shader inverseShader = ew::Shader("assets/inverse.vert", "assets/inverse.frag");
 	ew::Shader grayscaleShader = ew::Shader("assets/fullscreen.vert", "assets/grayscale.frag");
 	ew::Shader blurShader = ew::Shader("assets/blur.vert", "assets/blur.frag");
+
+	ew::Shader edgeShader = ew::Shader("assets/edge_detection.vert", "assets/edge_detection.frag");
+
 	ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
 
 	camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
@@ -196,19 +209,41 @@ int main() {
 				grayscaleShader.setInt("texture0", 0);
 				break;
 			case 2:
-				blurShader.use();
-				blurShader.setInt("texture0", 0);
-				blurShader.setInt("strength", blurStrength);
-				break;
-			case 3:
 				inverseShader.use();
 				inverseShader.setInt("texture0", 0);
+				break;
+			case 3:
 				break;
 			case 4:
 				//sg_apply_pipeline(chromaticAberrationRenderer.pipeline);
 				break;
 			case 5:
-				//sg_apply_pipeline(crtRenderer.pipeline);
+				blurShader.use();
+				blurShader.setInt("texture0", 0);
+				blurShader.setInt("strength", blurStrength);
+				break;
+			case 6:
+				break;
+			case 7:
+				edgeShader.use();
+				edgeShader.setInt("texture0", 0);
+				//edgeShader.setInt("strength", blurStrength);
+				break;
+			case 8:
+				break;
+			case 9:
+				break;
+			case 10:
+				break;
+			case 11:
+				break;
+			case 12:
+				break;
+			case 13:
+				break;
+			case 14:
+				break;
+			case 15:
 				break;
 			default:
 				fullscreenShader.use();
