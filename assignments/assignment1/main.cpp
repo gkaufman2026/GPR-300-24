@@ -121,7 +121,7 @@ int main() {
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 	GLuint brickTexture = ew::loadTexture("assets/brick_color.jpg");
 
-	//std::string test = "C:/Users/gkaufman/Desktop/GPR-300-24/assignments/assignment1/assets/";
+	std::string test = "C:/Users/gkaufman/Desktop/GPR-300-24/assignments/assignment1/assets/";
 
 	ew::Shader litShader = ew::Shader("assets/lit.vert", "assets/lit.frag");
 	ew::Shader fullscreenShader = ew::Shader("assets/fullscreen.vert", "assets/fullscreen.frag");
