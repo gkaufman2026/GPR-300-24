@@ -120,14 +120,14 @@ int main() {
 	GLFWwindow* window = initWindow("Assignment 1", screenWidth, screenHeight);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 	GLuint brickTexture = ew::loadTexture("assets/brick_color.jpg");
-	
-	std::string test = "C:/Users/gkaufman/Desktop/GPR-300-24/assignments/assignment1/assets/";
+
+	//std::string test = "C:/Users/gkaufman/Desktop/GPR-300-24/assignments/assignment1/assets/";
 
 	ew::Shader litShader = ew::Shader("assets/lit.vert", "assets/lit.frag");
 	ew::Shader fullscreenShader = ew::Shader("assets/fullscreen.vert", "assets/fullscreen.frag");
-	ew::Shader inverseShader = ew::Shader(test + "inverse.vert", test + "inverse.frag");
-	ew::Shader grayscaleShader = ew::Shader(test + "fullscreen.vert", test + "grayscale.frag");
-	ew::Shader blurShader = ew::Shader(test + "blur.vert", test + "blur.frag");
+	ew::Shader inverseShader = ew::Shader("assets/inverse.vert", "assets/inverse.frag");
+	ew::Shader grayscaleShader = ew::Shader("assets/fullscreen.vert", "assets/grayscale.frag");
+	ew::Shader blurShader = ew::Shader("assets/blur.vert", "assets/blur.frag");
 	ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
 
 	camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
@@ -190,7 +190,6 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// render fullscreen quad
-		
 		switch (effectIndex) {
 			case 1:
 				grayscaleShader.use();
