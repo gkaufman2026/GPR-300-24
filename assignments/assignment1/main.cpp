@@ -33,16 +33,16 @@ static float quadVertices[] = {
 static int effectIndex = 0;
 static std::vector<std::string> postProcessingEffects = {
     "None", // 0
-    "Grayscale", // 1
-	"Inverse", // 2
+    "Grayscale", // 1 - DONE
+	"Inverse", // 2 - DONE
 	"Box Blur", // 3
-	"Gaussian Blur", // 4
-    "Kernel Blur", // 5
+	"Gaussian Blur", // 4 
+    "Kernel Blur", // 5 - DONE
 	"Sharpen", // 6
-	"Edge Detect", // 7
+	"Edge Detect", // 7 - DONE
 	"HDR", // 8
 	"Gamma Correction", // 9
-    "Chromatic Aberration", // 10
+    "Chromatic Aberration", // 10 - DONE
 	"Vignette", // 11
 	"Lens Distortion", // 12
 	"Film Grain", // 13
@@ -62,6 +62,8 @@ ew::Transform monkeyTransform;
 // Customization UI Elements
 glm::vec3 ambientColor = glm::vec3(0.3, 0.4, 0.46);
 float blurStrength = 16;
+float boxBlurStrength = 9;
+float gaussianBlur = 16;
 float modelSpinSpeed = 1.0f;
 bool canModelSpin = true;
 
@@ -137,7 +139,8 @@ int main() {
 	ew::Shader inverseShader = ew::Shader("assets/inverse.vert", "assets/inverse.frag");
 	ew::Shader grayscaleShader = ew::Shader("assets/fullscreen.vert", "assets/grayscale.frag");
 	ew::Shader blurShader = ew::Shader("assets/blur.vert", "assets/blur.frag");
-
+	ew::Shader gaussian = ew::Shader("assets/blur.vert", "assets/gaussian.frag");
+	ew::Shader box = ew::Shader("assets/blur.vert", "assets/box.frag");
 	ew::Shader chromatic = ew::Shader("assets/chromatic.vert", "assets/chromatic.frag");
 	ew::Shader edgeShader = ew::Shader("assets/edge_detection.vert", "assets/edge_detection.frag");
 
@@ -213,9 +216,14 @@ int main() {
 				inverseShader.setInt("texture0", 0);
 				break;
 			case 3:
+				box.use();
+				box.setInt("texture0", 0);
+				box.setFloat("strength", boxBlurStrength);
 				break;
 			case 4:
-				//sg_apply_pipeline(chromaticAberrationRenderer.pipeline);
+				gaussian.use();
+				gaussian.setInt("texture0", 0);
+				gaussian.setFloat("strength", gaussianBlur);
 				break;
 			case 5:
 				blurShader.use();
@@ -304,7 +312,11 @@ void drawUI() {
 
 	switch (effectIndex) {
 	case 3:
+		ImGui::SliderFloat("Blur Strength", &boxBlurStrength, 0.0f, 12.0f);
+		break;
 	case 4:
+		ImGui::SliderFloat("Blur Strength", &gaussianBlur, 0.0f, 32.0f);
+		break;
 	case 5:
 		ImGui::SliderFloat("Blur Strength", &blurStrength, 0.0f, 32.0f);
 		break;
