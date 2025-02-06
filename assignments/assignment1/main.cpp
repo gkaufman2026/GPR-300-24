@@ -158,10 +158,19 @@ int main() {
 		return 0;
 	}
 
+	glGenVertexArrays(1, &fullscreenQuad.vao);
+	glGenBuffers(1, &fullscreenQuad.vbo);
+
 	glBindVertexArray(fullscreenQuad.vao);
-	glBindTexture(GL_TEXTURE_2D, framebuffer.color0);
-	glActiveTexture(GL_TEXTURE0);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindBuffer(GL_ARRAY_BUFFER, fullscreenQuad.vbo);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1,2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*) (sizeof(float) * 2));
+	
 	glBindVertexArray(0);
 
 	while (!glfwWindowShouldClose(window)) {
