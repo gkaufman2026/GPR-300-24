@@ -15,6 +15,8 @@
 #include <ew/cameraController.h>
 #include <ew/texture.h>
 
+#include <jk/framebuffer.h>
+
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 GLFWwindow* initWindow(const char* title, int width, int height);
 void drawUI();
@@ -29,6 +31,8 @@ static float quadVertices[] = {
         1.0f, -1.0f, 1.0f, 0.0f,
         1.0f,  1.0f, 1.0f, 1.0f,
 };
+
+jk::Framebuffer framebuffer;
 
 static int effectIndex = 0;
 static std::vector<std::string> postProcessingEffects = {
@@ -74,10 +78,6 @@ struct FullscreenQuad {
 struct Material {
 	float ambient = 1.0, diffuse = 0.5, specular = 0.5, shiness = 128;
 } material;
-
-struct Framebuffer{
-	GLuint fbo, color0, color1, depth;
-} framebuffer;
 
 void querty(ew::Shader shader, ew::Model model, GLuint texture) {
 	// 1. Pipeline Definition 
@@ -132,8 +132,6 @@ int main() {
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 	GLuint brickTexture = ew::loadTexture("assets/brick_color.jpg");
 
-	std::string test = "C:/Users/gkaufman/Desktop/GPR-300-24/assignments/assignment1/assets/";
-
 	ew::Shader litShader = ew::Shader("assets/lit.vert", "assets/lit.frag");
 	ew::Shader fullscreenShader = ew::Shader("assets/fullscreen.vert", "assets/fullscreen.frag");
 	ew::Shader inverseShader = ew::Shader("assets/inverse.vert", "assets/inverse.frag");
@@ -152,40 +150,19 @@ int main() {
 	camera.aspectRatio = (float)screenWidth / screenHeight;
 	camera.fov = 60.0f; //Vertical field of view, in degrees
 
-	// Initialize full screen quad
-	glGenVertexArrays(1, &fullscreenQuad.vao);
-	glGenBuffers(1, &fullscreenQuad.vbo);
-	
-	// Bind VAO AND VBO
-	glBindVertexArray(fullscreenQuad.vao);
-	glBindBuffer(GL_ARRAY_BUFFER, fullscreenQuad.vbo);
-
-	// Buffer data to VBO
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(0); // pos
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1); // uv
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(sizeof(float) * 2));	
-	glBindVertexArray(0);
-
-	// Color attachment
-	glGenFramebuffers(1, &framebuffer.fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.fbo);
-	glGenTextures(1, &framebuffer.color0);
-	glBindTexture(GL_TEXTURE_2D, framebuffer.color0);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer.color0, 0);
+	framebuffer = jk::createFramebuffer(screenWidth, screenHeight, GL_RG16F);
+	glEnable(GL_FRAMEBUFFER_SRGB);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 		printf("Buffer not complete!");
 		return 0;
 	}
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindVertexArray(fullscreenQuad.vao);
+	glBindTexture(GL_TEXTURE_2D, framebuffer.color0);
+	glActiveTexture(GL_TEXTURE0);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
@@ -261,12 +238,6 @@ int main() {
 				fullscreenShader.setInt("texture0", 0);
 				break;
 		}
-
-		glBindVertexArray(fullscreenQuad.vao);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, framebuffer.color0);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		glBindVertexArray(0);
 
 		drawUI();
 
