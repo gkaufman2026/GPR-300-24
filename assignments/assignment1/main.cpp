@@ -248,6 +248,12 @@ int main() {
 				break;
 		}
 
+		glBindVertexArray(fullscreenQuad.vao);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, framebuffer.color0);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(0);
+
 		drawUI();
 
 		glfwSwapBuffers(window);
@@ -318,7 +324,7 @@ void drawUI() {
 		ambientColor = glm::vec3(0.3, 0.4, 0.46);
 	}
 
-	ImGui::Image((ImTextureID)(intptr_t)framebuffer.color0, ImVec2(800, 600));
+	ImGui::Image((ImTextureID)(intptr_t)framebuffer.color0, ImVec2(screenWidth, screenHeight));
 
 	ImGui::End();
 
