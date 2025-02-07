@@ -68,6 +68,7 @@ glm::vec3 ambientColor = glm::vec3(0.3, 0.4, 0.46);
 float blurStrength = 16;
 float boxBlurStrength = 9;
 float gaussianBlur = 16;
+float vignetteIntensity = 5;
 float modelSpinSpeed = 1.0f;
 bool canModelSpin = true;
 
@@ -142,6 +143,7 @@ int main() {
 	ew::Shader sharpen = ew::Shader("assets/blur.vert", "assets/sharpen.frag");
 	ew::Shader chromatic = ew::Shader("assets/chromatic.vert", "assets/chromatic.frag");
 	ew::Shader edgeShader = ew::Shader("assets/edge_detection.vert", "assets/edge_detection.frag");
+	ew::Shader vignette = ew::Shader("assets/blur.vert", "assets/vignette.frag");
 
 	ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
 
@@ -235,6 +237,8 @@ int main() {
 				chromatic.setInt("texture0", 0);
 				break;
 			case 11:
+				vignette.use();
+				vignette.setFloat("intensity", vignetteIntensity);
 				break;
 			case 12:
 				break;
@@ -308,6 +312,9 @@ void drawUI() {
 		break;
 	case 5:
 		ImGui::SliderFloat("Blur Strength", &blurStrength, 0.0f, 32.0f);
+		break;
+	case 11:
+		ImGui::SliderFloat("Intensity", &vignetteIntensity, 0.0f, 32.0f);
 		break;
 	default:
 		break;
