@@ -1,6 +1,7 @@
 #version 450
 
-out vec4 FragColor;
+layout(location = 0) out vec4 fragColor0;
+layout(location = 1) out vec4 fragBrightness;
 
 in Surface {
 	vec3 WorldPos, WorldNormal;
@@ -11,7 +12,7 @@ uniform sampler2D _MonkeyTexture;
 uniform vec3 _EyePos;
 uniform vec3 _AmbientColor = vec3(0.3, 0.4, 0.46);
 uniform vec3 _LightDirection = vec3(0.0, -1.0, 0.0);
-uniform vec3 _LightColor = vec3(1.0);
+uniform vec3 _LightColor = vec3(100.0);
 
 struct Material {
 	// ambient = Ka, the ambient co-efficient (0-1)
@@ -22,6 +23,7 @@ struct Material {
 };
 
 uniform Material _Material;
+uniform float brightnessThreshold;
 
 void main() {
 	vec3 normal = normalize(fs_in.WorldNormal);
@@ -40,5 +42,13 @@ void main() {
 
 	vec3 objectColor = texture(_MonkeyTexture, fs_in.UV).rgb;
 
-	FragColor = vec4(objectColor * lightColor, 1.0);
+	fragColor0 = vec4(objectColor * lightColor, 1.0);
+
+	float brightness = dot(fragColor0.rgb, vec3(0.2126, 0.7152, 0.0722));
+	
+	if (brightness > 1) {
+		fragBrightness = fragColor0;
+	} else {
+		fragBrightness = vec4(0.0);
+	}
 }

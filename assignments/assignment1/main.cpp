@@ -64,11 +64,17 @@ ew::Transform monkeyTransform;
 
 // Customization UI Elements
 glm::vec3 ambientColor = glm::vec3(0.3, 0.4, 0.46);
+glm::vec3 fogColor = glm::vec3(1.0);
 float blurStrength = 16;
 float boxBlurStrength = 9;
 float gaussianBlur = 16;
 float vignetteIntensity = 5;
 float grainIntensity = 2;
+float hdrExposure = 1;
+float steepness = 2;
+float offset = 0;
+
+float brightness = 1;
 
 glm::vec3 radialDistortion = glm::vec3(0.3, 0.4, 0.46);
 glm::vec2 tangentialDistortion = glm::vec2(0.3, 0.4);
@@ -99,6 +105,7 @@ void querty(ew::Shader shader, ew::Model model, GLuint texture) {
 	glBindTexture(GL_TEXTURE_2D, texture);
 
 	shader.use();
+	shader.setVec3("_LightColor", glm::vec3(brightness));
 
 	if (canModelSpin) {
 		monkeyTransform.rotation = glm::rotate(monkeyTransform.rotation, deltaTime * modelSpinSpeed, glm::vec3(0.0, 1.0, 0.0));
@@ -150,6 +157,8 @@ int main() {
 	ew::Shader vignetteShader = ew::Shader("assets/blur.vert", "assets/vignette.frag");
 	ew::Shader filmGrainShader = ew::Shader("assets/blur.vert", "assets/grain.frag");
 	ew::Shader lenseDistortionShader = ew::Shader("assets/blur.vert", "assets/lens_distortion.frag");
+	ew::Shader hdrShader = ew::Shader("assets/blur.vert", "assets/hdr.frag");
+	ew::Shader fogShader = ew::Shader("assets/blur.vert", "assets/screen_space_fog.frag");
 
 	ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
 
@@ -199,6 +208,13 @@ int main() {
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+		
+		glBindVertexArray(fullscreenQuad.vao);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, framebuffer.color0);
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, framebuffer.color1);
 
 		// render fullscreen quad
 		switch (effectIndex) {
@@ -235,6 +251,9 @@ int main() {
 				edgeShader.setFloat("strength", blurStrength);
 				break;
 			case 8:
+				hdrShader.use();
+				hdrShader.setInt("hdrBuffer", 1);
+				hdrShader.setFloat("exposure", hdrExposure);
 				break;
 			case 9:
 				chromaticShader.use();
@@ -255,6 +274,12 @@ int main() {
 				filmGrainShader.setFloat("intensity", grainIntensity);
 				break;
 			case 13:
+				fogShader.use();
+				fogShader.setInt("texture0", 0);
+				fogShader.setInt("depthTexture", 1);
+				fogShader.setVec3("fogColor", fogColor);
+				fogShader.setFloat("Steepness", steepness);
+				fogShader.setFloat("Offset", offset);
 				break;
 			default:
 				fullscreenShader.use();
@@ -262,9 +287,6 @@ int main() {
 				break;
 		}
 
-		glBindVertexArray(fullscreenQuad.vao);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, framebuffer.color0);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
 
@@ -300,6 +322,8 @@ void drawUI() {
 		ImGui::SliderFloat("Model Spin Rate", &modelSpinSpeed, 1.0f, 5.0f);
 	}
 
+	ImGui::SliderFloat("Brightness", &brightness, 0.f, 100.f);
+
 	if (ImGui::BeginCombo("Effect", postProcessingEffects[effectIndex].c_str())) {
 		for (auto n = 0; n < postProcessingEffects.size(); ++n) {
 			auto isSelected = (postProcessingEffects[effectIndex] == postProcessingEffects[n]);
@@ -323,6 +347,9 @@ void drawUI() {
 	case 5:
 		ImGui::SliderFloat("Blur Strength", &blurStrength, 0.0f, 32.0f);
 		break;
+	case 8:
+		ImGui::SliderFloat("Exposure", &hdrExposure, 0.0f, 10.0f);
+		break;
 	case 10:
 		ImGui::SliderFloat("Intensity", &vignetteIntensity, 0.0f, 32.0f);
 		break;
@@ -340,6 +367,13 @@ void drawUI() {
 	case 12:
 		ImGui::SliderFloat("Intensity", &grainIntensity, 0.0f, 12.0f);
 		break;
+	case 13:
+		ImGui::SliderFloat("Steepness", &steepness, 0.0f, 12.0f);
+		ImGui::SliderFloat("Offset", &offset, 0.0f, 12.0f);
+		ImGui::SliderFloat("Fog R", &fogColor.x, 0.0f, 1.0f);
+		ImGui::SliderFloat("Fog G", &fogColor.y, 0.0f, 1.0f);
+		ImGui::SliderFloat("Fog B", &fogColor.z, 0.0f, 1.0f);
+		break;
 	default:
 		break;
 	}
@@ -356,6 +390,7 @@ void drawUI() {
 	}
 
 	ImGui::Image((ImTextureID)(intptr_t)framebuffer.color0, ImVec2(screenWidth, screenHeight));
+	ImGui::Image((ImTextureID)(intptr_t)framebuffer.color1, ImVec2(screenWidth, screenHeight));
 
 	ImGui::End();
 

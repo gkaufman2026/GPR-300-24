@@ -1,5 +1,5 @@
 #include "framebuffer.h"
-
+#include <stdio.h>
 namespace jk {
     Framebuffer createFramebuffer(unsigned int width, unsigned int height, int colorFormat) {
         Framebuffer framebuffer;
@@ -10,11 +10,24 @@ namespace jk {
         // Color attachment
         glGenTextures(1, &framebuffer.color0);
         glBindTexture(GL_TEXTURE_2D, framebuffer.color0);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer.color0, 0);
+
+        glGenTextures(1, &framebuffer.color1);
+        glBindTexture(GL_TEXTURE_2D, framebuffer.color1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, framebuffer.color1, 0);
+
+        GLuint drawBuffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+        glDrawBuffers(2, drawBuffers);
 
         glGenTextures(1, &framebuffer.depth);
         glBindTexture(GL_TEXTURE_2D, framebuffer.depth);
@@ -24,7 +37,13 @@ namespace jk {
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, framebuffer.depth, 0);
 
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            printf("Shit fucked");
+            return jk::Framebuffer();
+        }
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
         return framebuffer;
     }
 }
