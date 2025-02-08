@@ -49,6 +49,6 @@ void main() {
 	if (brightness > 1) {
 		fragBrightness = fragColor0;
 	} else {
-		fragBrightness = vec4(0.0);
+		fragBrightness = vec4(vec3(0.0), 1.0);
 	}
 }

@@ -49,7 +49,7 @@ static std::vector<std::string> postProcessingEffects = {
 	"Vignette", // 10 - DONE
 	"Lens Distortion", // 11 - DONE
 	"Film Grain", // 12 - DONE
-	"Screen-space Fog" // 13
+	"Screen-space Fog" // 13 // DONE
 };
 
 //Global state
@@ -348,7 +348,7 @@ void drawUI() {
 		ImGui::SliderFloat("Blur Strength", &blurStrength, 0.0f, 32.0f);
 		break;
 	case 8:
-		ImGui::SliderFloat("Exposure", &hdrExposure, 0.0f, 10.0f);
+		ImGui::SliderFloat("Exposure", &hdrExposure, 0.001f, 10.0f);
 		break;
 	case 10:
 		ImGui::SliderFloat("Intensity", &vignetteIntensity, 0.0f, 32.0f);
