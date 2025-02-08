@@ -49,7 +49,7 @@ static std::vector<std::string> postProcessingEffects = {
     "Chromatic Aberration", // 10 - DONE
 	"Vignette", // 11 - DONE
 	"Lens Distortion", // 12
-	"Film Grain", // 13
+	"Film Grain", // 13 - DONE
 	"Screen-space Fog" // 14
 };
 
@@ -70,6 +70,10 @@ float boxBlurStrength = 9;
 float gaussianBlur = 16;
 float vignetteIntensity = 5;
 float grainIntensity = 2;
+
+glm::vec3 radialDistortion = glm::vec3(0.3, 0.4, 0.46);
+glm::vec2 tangentialDistortion = glm::vec2(0.3, 0.4);
+
 float modelSpinSpeed = 1.0f;
 bool canModelSpin = true;
 
@@ -146,6 +150,7 @@ int main() {
 	ew::Shader edgeShader = ew::Shader("assets/edge_detection.vert", "assets/edge_detection.frag");
 	ew::Shader vignetteShader = ew::Shader("assets/blur.vert", "assets/vignette.frag");
 	ew::Shader filmGrainShader = ew::Shader("assets/blur.vert", "assets/grain.frag");
+	ew::Shader lenseDistortionShader = ew::Shader("assets/blur.vert", "assets/lens_distortion.frag");
 
 	ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
 
@@ -243,6 +248,10 @@ int main() {
 				vignetteShader.setFloat("intensity", vignetteIntensity);
 				break;
 			case 12:
+				lenseDistortionShader.use();
+				lenseDistortionShader.setInt("texture0", 0);
+				lenseDistortionShader.setVec3("radialDistortionParams", radialDistortion);
+				lenseDistortionShader.setVec2("tangentialDistortionParams", tangentialDistortion);
 				break;
 			case 13:
 				filmGrainShader.use();
@@ -320,6 +329,17 @@ void drawUI() {
 	case 11:
 		ImGui::SliderFloat("Intensity", &vignetteIntensity, 0.0f, 32.0f);
 		break;
+	case 12:
+		if (ImGui::CollapsingHeader("Radial Distortion")) {
+			ImGui::SliderFloat("X", &radialDistortion.x, 0.0f, 1.0f);
+			ImGui::SliderFloat("Y", &radialDistortion.y, 0.0f, 1.0f);
+			ImGui::SliderFloat("Z", &radialDistortion.z, 0.0f, 1.0f);
+		}
+		if (ImGui::CollapsingHeader("Tangential Distortion")) {
+			ImGui::SliderFloat("X", &tangentialDistortion.x, 0.0f, 1.0f);
+			ImGui::SliderFloat("Y", &tangentialDistortion.y, 0.0f, 1.0f);
+		}
+	break;
 	case 13:
 		ImGui::SliderFloat("Intensity", &grainIntensity, 0.0f, 12.0f);
 		break;
