@@ -45,12 +45,11 @@ static std::vector<std::string> postProcessingEffects = {
 	"Sharpen", // 6 - DONE
 	"Edge Detect", // 7 - DONE
 	"HDR", // 8
-	"Gamma Correction", // 9
-    "Chromatic Aberration", // 10 - DONE
-	"Vignette", // 11 - DONE
-	"Lens Distortion", // 12
-	"Film Grain", // 13 - DONE
-	"Screen-space Fog" // 14
+    "Chromatic Aberration", // 9 - DONE
+	"Vignette", // 10 - DONE
+	"Lens Distortion", // 11 - DONE
+	"Film Grain", // 12 - DONE
+	"Screen-space Fog" // 13
 };
 
 //Global state
@@ -238,26 +237,24 @@ int main() {
 			case 8:
 				break;
 			case 9:
-				break;
-			case 10:
 				chromaticShader.use();
 				chromaticShader.setInt("texture0", 0);
 				break;
-			case 11:
+			case 10:
 				vignetteShader.use();
 				vignetteShader.setFloat("intensity", vignetteIntensity);
 				break;
-			case 12:
+			case 11:
 				lenseDistortionShader.use();
 				lenseDistortionShader.setInt("texture0", 0);
 				lenseDistortionShader.setVec3("radialDistortionParams", radialDistortion);
 				lenseDistortionShader.setVec2("tangentialDistortionParams", tangentialDistortion);
 				break;
-			case 13:
+			case 12:
 				filmGrainShader.use();
 				filmGrainShader.setFloat("intensity", grainIntensity);
 				break;
-			case 14:
+			case 13:
 				break;
 			default:
 				fullscreenShader.use();
@@ -326,10 +323,10 @@ void drawUI() {
 	case 5:
 		ImGui::SliderFloat("Blur Strength", &blurStrength, 0.0f, 32.0f);
 		break;
-	case 11:
+	case 10:
 		ImGui::SliderFloat("Intensity", &vignetteIntensity, 0.0f, 32.0f);
 		break;
-	case 12:
+	case 11:
 		if (ImGui::CollapsingHeader("Radial Distortion")) {
 			ImGui::SliderFloat("X", &radialDistortion.x, 0.0f, 1.0f);
 			ImGui::SliderFloat("Y", &radialDistortion.y, 0.0f, 1.0f);
@@ -340,7 +337,7 @@ void drawUI() {
 			ImGui::SliderFloat("Y", &tangentialDistortion.y, 0.0f, 1.0f);
 		}
 	break;
-	case 13:
+	case 12:
 		ImGui::SliderFloat("Intensity", &grainIntensity, 0.0f, 12.0f);
 		break;
 	default:
