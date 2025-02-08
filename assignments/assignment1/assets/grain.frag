@@ -4,14 +4,15 @@ out vec4 FragColor;
 in vec2 vs_texcoord;
 
 uniform sampler2D texture0;
-uniform float time;
+uniform float intensity;
 
-float noise (vec2 seed) {
-	float x = (seed.x / 3.14159 + 4) * (seed.y / 13 + 4) * ((frac(time) + 1) * 10);
-	return mod((mod(x, 13) + 1) * (mod(x, 123) + 1), 0.01) - 0.005;
-}
+// https://gameidea.org/2023/12/01/film-grain-shader/
 
 void main() {
-	vec2 grain = noise(vec2(0.5, 1.0));
-	FragColor = vec4(vec3(grain), 1.0);
+	float noise = (fract(sin(dot(vs_texcoord, vec2(12.9898, 78.233))) * 43758.5453) - 0.5);
+
+	vec3 color = texture(texture0, vs_texcoord).rgb;
+	vec3 grain = color - noise * intensity;
+
+	FragColor = vec4(grain, 1.0);
 }

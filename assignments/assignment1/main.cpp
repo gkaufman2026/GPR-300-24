@@ -47,7 +47,7 @@ static std::vector<std::string> postProcessingEffects = {
 	"HDR", // 8
 	"Gamma Correction", // 9
     "Chromatic Aberration", // 10 - DONE
-	"Vignette", // 11
+	"Vignette", // 11 - DONE
 	"Lens Distortion", // 12
 	"Film Grain", // 13
 	"Screen-space Fog" // 14
@@ -69,6 +69,7 @@ float blurStrength = 16;
 float boxBlurStrength = 9;
 float gaussianBlur = 16;
 float vignetteIntensity = 5;
+float grainIntensity = 2;
 float modelSpinSpeed = 1.0f;
 bool canModelSpin = true;
 
@@ -138,12 +139,13 @@ int main() {
 	ew::Shader inverseShader = ew::Shader("assets/inverse.vert", "assets/inverse.frag");
 	ew::Shader grayscaleShader = ew::Shader("assets/fullscreen.vert", "assets/grayscale.frag");
 	ew::Shader blurShader = ew::Shader("assets/blur.vert", "assets/blur.frag");
-	ew::Shader gaussian = ew::Shader("assets/blur.vert", "assets/gaussian.frag");
-	ew::Shader box = ew::Shader("assets/blur.vert", "assets/box.frag");
-	ew::Shader sharpen = ew::Shader("assets/blur.vert", "assets/sharpen.frag");
-	ew::Shader chromatic = ew::Shader("assets/chromatic.vert", "assets/chromatic.frag");
+	ew::Shader gaussianShader = ew::Shader("assets/blur.vert", "assets/gaussian.frag");
+	ew::Shader boxShader = ew::Shader("assets/blur.vert", "assets/box.frag");
+	ew::Shader sharpenShader = ew::Shader("assets/blur.vert", "assets/sharpen.frag");
+	ew::Shader chromaticShader = ew::Shader("assets/chromatic.vert", "assets/chromatic.frag");
 	ew::Shader edgeShader = ew::Shader("assets/edge_detection.vert", "assets/edge_detection.frag");
-	ew::Shader vignette = ew::Shader("assets/blur.vert", "assets/vignette.frag");
+	ew::Shader vignetteShader = ew::Shader("assets/blur.vert", "assets/vignette.frag");
+	ew::Shader filmGrainShader = ew::Shader("assets/blur.vert", "assets/grain.frag");
 
 	ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
 
@@ -205,14 +207,14 @@ int main() {
 				inverseShader.setInt("texture0", 0);
 				break;
 			case 3:
-				box.use();
-				box.setInt("texture0", 0);
-				box.setFloat("strength", boxBlurStrength);
+				boxShader.use();
+				boxShader.setInt("texture0", 0);
+				boxShader.setFloat("strength", boxBlurStrength);
 				break;
 			case 4:
-				gaussian.use();
-				gaussian.setInt("texture0", 0);
-				gaussian.setFloat("strength", gaussianBlur);
+				gaussianShader.use();
+				gaussianShader.setInt("texture0", 0);
+				gaussianShader.setFloat("strength", gaussianBlur);
 				break;
 			case 5:
 				blurShader.use();
@@ -220,8 +222,8 @@ int main() {
 				blurShader.setFloat("strength", blurStrength);
 				break;
 			case 6:
-				sharpen.use();
-				sharpen.setInt("texture0", 0);
+				sharpenShader.use();
+				sharpenShader.setInt("texture0", 0);
 				break;
 			case 7:
 				edgeShader.use();
@@ -233,16 +235,18 @@ int main() {
 			case 9:
 				break;
 			case 10:
-				chromatic.use();
-				chromatic.setInt("texture0", 0);
+				chromaticShader.use();
+				chromaticShader.setInt("texture0", 0);
 				break;
 			case 11:
-				vignette.use();
-				vignette.setFloat("intensity", vignetteIntensity);
+				vignetteShader.use();
+				vignetteShader.setFloat("intensity", vignetteIntensity);
 				break;
 			case 12:
 				break;
 			case 13:
+				filmGrainShader.use();
+				filmGrainShader.setFloat("intensity", grainIntensity);
 				break;
 			case 14:
 				break;
@@ -315,6 +319,9 @@ void drawUI() {
 		break;
 	case 11:
 		ImGui::SliderFloat("Intensity", &vignetteIntensity, 0.0f, 32.0f);
+		break;
+	case 13:
+		ImGui::SliderFloat("Intensity", &grainIntensity, 0.0f, 12.0f);
 		break;
 	default:
 		break;
