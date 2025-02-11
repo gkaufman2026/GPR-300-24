@@ -14,13 +14,13 @@ uniform vec3 camera_pos;
 out vec2 vs_texcoords;
 out vec3 to_camera;
 uniform float strength;
-uniform float iTime;
+uniform float time;
 
 float calculateSurface(float x, float z) {
   float scale = 10.0;
   float y = 0.0;
-  y += (sin(x * 1.0 / scale + iTime * 1.0) + sin(x * 2.3 / scale + iTime * 1.5) + sin(x * 3.3 / scale + iTime * 0.4)) / 3.0;
-  y += (sin(z * 0.2 / scale + iTime * 1.8) + sin(z * 1.8 / scale + iTime * 1.8) + sin(z * 2.8 / scale + iTime * 0.8)) / 3.0;
+  y += (sin(x * 1.0 / scale + time * 1.0) + sin(x * 2.3 / scale + time * 1.5) + sin(x * 3.3 / scale + time * 0.4)) / 3.0;
+  y += (sin(z * 0.2 / scale + time * 1.8) + sin(z * 1.8 / scale + time * 1.8) + sin(z * 2.8 / scale + time * 0.8)) / 3.0;
   return y;
 }
 void main() {

@@ -47,17 +47,10 @@ struct Material {
 
 struct {
 	glm::vec3 color = glm::vec3(0, 0.31, 0.85);
-	glm::vec3 reflectColor = glm::vec3(1.0, 0.0, 0.0);
-	glm::vec2 direction = glm::vec2(1.0, 1.0);
-	glm::vec2 sample2 = glm::vec2(5.821, 4.8);
-	float tiling = 1.f;
-	float timeScalar = 2;
-	float b1 = 0.9f;
-	float b2 = 9.02f;
-	float strength = 5.f;
+	float scale = 5.0f, warpScale = 1.0f, warpStrength = 0.2f, spec_scale;
 } debug;
 
-void querty(ew::Shader shader, ew::Mesh model, GLuint texture, float time) {
+void querty(ew::Shader shader, ew::Mesh model, GLuint texture, GLuint texture2, GLuint texture3, float time) {
 	// 1. Pipeline Definition 
 	
 	//After window initialization...
@@ -71,6 +64,12 @@ void querty(ew::Shader shader, ew::Mesh model, GLuint texture, float time) {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, texture2);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, texture3);
+
 	shader.use();
 
 	if (canModelSpin) {
@@ -80,16 +79,11 @@ void querty(ew::Shader shader, ew::Mesh model, GLuint texture, float time) {
 	shader.setVec3("camera_pos", camera.position);
 	shader.setMat4("model", glm::mat4(1.0f));
 	shader.setMat4("view_proj", camera.projectionMatrix() * camera.viewMatrix());
-	shader.setVec3("water_color", debug.color);
-	shader.setVec3("reflectColor", debug.reflectColor);
-	shader.setFloat("tiling", debug.tiling);
-	shader.setVec2("_Direction", debug.direction);
-	shader.setFloat("iTime", time);
-	shader.setFloat("b1", debug.b1);
-	shader.setFloat("b2", debug.b2);
-	shader.setFloat("strength", debug.strength);
-	shader.setInt("_Texture", 0);
-
+	shader.setVec3("color", debug.color);
+	shader.setFloat("scale", debug.scale);
+	shader.setFloat("warpScale", debug.warpScale);
+	shader.setFloat("warpStrength", debug.warpStrength);
+	shader.setFloat("time", time);
 	model.draw();
 }
 
@@ -108,9 +102,11 @@ void resetMaterial(Material* material) {
 
 int main() {
 	GLFWwindow* window = initWindow("Assignment 0", screenWidth, screenHeight);
-	GLuint waterTexture = ew::loadTexture("assets/water128.png");
+	GLuint waterTexture = ew::loadTexture("assets/water_tex.png");
+	GLuint waterWarp = ew::loadTexture("assets/water_warp.png");
+	GLuint waterSpec = ew::loadTexture("assets/water_spec.png");
 
-	ew::Shader waterShader = ew::Shader("assets/water.vert", "assets/water.frag");
+	ew::Shader waterShader = ew::Shader("assets/water.vs", "assets/water.fs");
 
 	plane.load(ew::createPlane(50.f, 50.f, 100));
 
@@ -132,7 +128,7 @@ int main() {
 		glClearColor(0.6f,0.8f,0.92f,1.0f);
 
 		// Main Render
-		querty(waterShader, plane, waterTexture, time);
+		querty(waterShader, plane, waterTexture, waterWarp, waterSpec, time);
 		cameraController.move(window, &camera, deltaTime);
 
 		drawUI();
@@ -150,20 +146,12 @@ void drawUI() {
 	ImGui::Begin("Settings");
 
 	ImGui::ColorEdit3("Water Color", &debug.color[0]);
-	ImGui::ColorEdit3("Reflection Color", &debug.reflectColor[0]);
-	ImGui::SliderFloat("Tiling", &debug.tiling, 1.f, 10.f);
-	ImGui::SliderFloat("B1", &debug.b1, 0.f, 1.f);
-	ImGui::SliderFloat("B2", &debug.b2, 0.f, 1.f);
-	ImGui::SliderFloat("Strength", &debug.strength, 0.f, 10.f);
-	ImGui::SliderFloat2("Direction", &debug.direction[0], 1.0f, 10.f);
-	ImGui::SliderFloat2("Sample 2", &debug.sample2[0], 1.0f, 10.f);
+	ImGui::SliderFloat("Warp Scale", &debug.warpScale, 0.f, 10.f);
+	ImGui::SliderFloat("Warp Strength", &debug.warpStrength, 0.f, 10.f);
+	ImGui::SliderFloat("Scale", &debug.scale, 0.f, 10.f);
 
 	if (ImGui::Button("Reset Water Color")) {
 		debug.color = glm::vec3(0.3, 0.4, 0.46);
-	}
-
-	if (ImGui::Button("Reset Reflection Color")) {
-		debug.reflectColor = glm::vec3(1.0, 0.0, 0.0);
 	}
 
 	if (ImGui::Button("Reset Camera")) {
