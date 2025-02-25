@@ -43,16 +43,19 @@ struct DepthBuffer {
 	GLuint depth;
 
 	void Initialize() {
-		glGenTextures(1, &fbo);
-        glBindTexture(GL_TEXTURE_2D, fbo);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, 256, 256, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);	
+
+		glGenTextures(1, &depth);
+        glBindTexture(GL_TEXTURE_2D, depth);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 500, 500, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
-
-		glDrawBuffer(GL_NONE);
+	
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
+		glDrawBuffers(0, nullptr);
 		glReadBuffer(GL_NONE);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -68,20 +71,25 @@ struct Material {
 } material;
 
 struct Light {
-	glm::vec3 pos = glm::vec3(0.0f, 10.0f, 5.0f), color = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 pos = glm::vec3(0.0f, 10.0f, 5.0f), color = glm::vec3(1.0f, 1.0f, 1.0f);
 } light;
 
 void querty(ew::Shader shader, ew::Shader shadow, ew::Model model, ew::Mesh plane, GLuint texture) {
 	// 1. Pipeline Definition 
-	const auto lightProj = glm::ortho(-10.f, 10.f, -10.f, 10.0f, 0.1f, 100.f);
+	const auto lightProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f); 
 	const auto lightView = glm::lookAt(light.pos, glm::vec3(0.0f), glm::vec3(0.0, 1.0f, 0.0f));
 	const auto lightViewProj = lightProj * lightView;
 
-	// RE-IMPLEMENT
 	glBindFramebuffer(GL_FRAMEBUFFER, depthBuffer.fbo); {
 		glEnable(GL_DEPTH_TEST);
-		glViewport(0, 0, 256, 256);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glViewport(0, 0, 500, 500);
+		glClear(GL_DEPTH_BUFFER_BIT);
+
+		shadow.use();
+		shadow.setMat4("_Model", monkeyTransform.modelMatrix());
+		shadow.setMat4("_LightViewProj", lightViewProj);
+
+		model.draw();
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -98,6 +106,9 @@ void querty(ew::Shader shader, ew::Shader shadow, ew::Model model, ew::Mesh plan
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthBuffer.depth);
+
 	shader.use();
 
 	shader.setInt("_MonkeyTexture", 0);
@@ -105,16 +116,11 @@ void querty(ew::Shader shader, ew::Shader shadow, ew::Model model, ew::Mesh plan
 	shader.setFloat("_Material.diffuse", material.diffuse);
 	shader.setFloat("_Material.specular", material.specular);
 	shader.setFloat("_Material.shininess", material.shiness);
-	shader.setVec3("_light.pos", light.pos);
-	shader.setVec3("_light.color", light.color);
+	shader.setVec3("_Light.pos", light.pos);
+	shader.setVec3("_Light.color", light.color);
 	shader.setVec3("_CameraPos", camera.position);
 	shader.setMat4("_Model", monkeyTransform.modelMatrix());
 	shader.setMat4("_ViewProj", camera.projectionMatrix() * camera.viewMatrix());
-
-	// shadow.use();
-
-	// shadow.setMat4("_Model", monkeyTransform.modelMatrix());
-	// shadow.setMat4("_LightViewProj", lightViewProj);
 
 	model.draw();
 
@@ -123,7 +129,7 @@ void querty(ew::Shader shader, ew::Shader shadow, ew::Model model, ew::Mesh plan
 }
 
 void resetCamera(ew::Camera* camera, ew::CameraController* controller) {
-	camera->position = glm::vec3(0, 10, 5.0f);
+	camera->position = glm::vec3(0.0f, 0.0f, 5.0f);
 	camera->target = glm::vec3(0);
 	controller->yaw = controller->pitch = 0;
 }
@@ -145,9 +151,9 @@ int main() {
 
 	plane.load(ew::createPlane(50.f, 50.f, 100));
 
-	//depthBuffer.Initialize();
+	depthBuffer.Initialize();
 
-	camera.position = glm::vec3(0.0f, 10.0f, 5.0f);
+	camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
 	camera.target = glm::vec3(0.0f, 0.0f, 0.0f); //Look at the center of the scene
 	camera.aspectRatio = (float)screenWidth / screenHeight;
 	camera.fov = 60.0f; //Vertical field of view, in degrees
@@ -192,9 +198,13 @@ void drawUI() {
 		ImGui::SliderFloat("Shininess", &material.shiness, 2.0f, 1024.0f);
 	}
 
+	ImGui::DragFloat3("Light Pos", &light.pos[0]);
+	ImGui::ColorEdit3("Light Color", &light.color[0]);
+
 	if (ImGui::Button("Reset Camera")) {
 		resetCamera(&camera, &cameraController);
 	}
+
 	if (ImGui::Button("Reset Material")) {
 		resetMaterial(&material);
 	}
@@ -209,8 +219,7 @@ void drawUI() {
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void framebufferSizeCallback(GLFWwindow* window, int width, int height)
-{
+void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 	screenWidth = width;
 	screenHeight = height;

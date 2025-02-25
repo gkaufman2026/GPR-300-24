@@ -19,6 +19,7 @@ in Surface {
 
 out vec4 FragColor;
 
+uniform sampler2D _MonkeyTexture;
 uniform Material _Material;
 uniform vec3 _CameraPos;
 uniform Light _Light;
@@ -50,7 +51,7 @@ void main () {
     lighting *= (1.0 - shadow);
     lighting *= _Light.color;
 
-    vec3 objectColor = normal * 0.5 + 0.5;
+    vec3 objectColor = texture(_MonkeyTexture, fs_in.UV).rgb;
 
     FragColor = vec4(objectColor * lighting, 1.0);
 }
