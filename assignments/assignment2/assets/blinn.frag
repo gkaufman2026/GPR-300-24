@@ -5,14 +5,11 @@ struct Light {
 };
 
 struct Material {
-	// ambient = Ka, the ambient co-efficient (0-1)
-	// diffuse = Kd, the diffuse co-efficient (0-1)
-	// specular = Ks, the specular co-efficient (0-1)
-	// shininess, Affects the size of spec highlight
 	float ambient, diffuse, specular, shininess; 
 };
 
 in Surface {
+	vec4 FragPosLightSpace;
 	vec3 WorldPos, WorldNormal;
 	vec2 UV;
 } fs_in;
@@ -20,12 +17,19 @@ in Surface {
 out vec4 FragColor;
 
 uniform sampler2D _MonkeyTexture;
+uniform sampler2D _ShadowMap;
 uniform Material _Material;
 uniform vec3 _CameraPos;
 uniform Light _Light;
 
-float shadowCalculation(vec4 lightSpace) {
-    return 0.0;
+float shadowCalculation(vec4 fragPosLightSpace) {
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5; 
+    float closestDepth = texture(_ShadowMap, projCoords.xy).r;
+    float currentDepth = projCoords.z;  
+    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;  
+
+    return shadow;
 }
 
 vec3 blinnPhong(vec3 normal, vec3 fragPos) {
@@ -43,15 +47,15 @@ vec3 blinnPhong(vec3 normal, vec3 fragPos) {
     return (diffuse + spec);
 }
 
-void main () {
+void main() {
+	vec3 color = texture(_MonkeyTexture, fs_in.UV).rgb;
     vec3 normal = normalize(fs_in.WorldNormal);
-    float shadow = shadowCalculation(vec4(0.0));
+    float shadow = shadowCalculation(fs_in.FragPosLightSpace);  
 
     vec3 lighting = blinnPhong(normal, fs_in.WorldPos);
     lighting *= (1.0 - shadow);
     lighting *= _Light.color;
 
     vec3 objectColor = texture(_MonkeyTexture, fs_in.UV).rgb;
-
     FragColor = vec4(objectColor * lighting, 1.0);
 }

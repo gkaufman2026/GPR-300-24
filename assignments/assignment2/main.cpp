@@ -55,7 +55,7 @@ struct DepthBuffer {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
-		glDrawBuffers(0, nullptr);
+		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -112,6 +112,7 @@ void querty(ew::Shader shader, ew::Shader shadow, ew::Model model, ew::Mesh plan
 	shader.use();
 
 	shader.setInt("_MonkeyTexture", 0);
+	shader.setInt("_ShadowMap", 1);
 	shader.setFloat("_Material.ambient", material.ambient);
 	shader.setFloat("_Material.diffuse", material.diffuse);
 	shader.setFloat("_Material.specular", material.specular);
@@ -121,6 +122,7 @@ void querty(ew::Shader shader, ew::Shader shadow, ew::Model model, ew::Mesh plan
 	shader.setVec3("_CameraPos", camera.position);
 	shader.setMat4("_Model", monkeyTransform.modelMatrix());
 	shader.setMat4("_ViewProj", camera.projectionMatrix() * camera.viewMatrix());
+	shader.setMat4("_LightViewProj", lightViewProj);
 
 	model.draw();
 
