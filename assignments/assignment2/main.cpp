@@ -30,6 +30,7 @@ void drawUI();
 //Global state
 int screenWidth = 1080;
 int screenHeight = 720;
+int depthWidth = 250, depthHeight = 250;
 float prevFrameTime;
 float deltaTime;
 
@@ -48,7 +49,7 @@ struct DepthBuffer {
 
 		glGenTextures(1, &depth);
         glBindTexture(GL_TEXTURE_2D, depth);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 500, 500, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, depthWidth, depthHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -74,6 +75,10 @@ struct Light {
 	glm::vec3 pos = glm::vec3(0.0f, 10.0f, 5.0f), color = glm::vec3(1.0f, 1.0f, 1.0f);
 } light;
 
+struct Debug {
+	float shadowBias = 0.01f;
+} debug;
+
 void querty(ew::Shader shader, ew::Shader shadow, ew::Model model, ew::Mesh plane, GLuint texture) {
 	// 1. Pipeline Definition 
 	const auto lightProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f); 
@@ -82,7 +87,7 @@ void querty(ew::Shader shader, ew::Shader shadow, ew::Model model, ew::Mesh plan
 
 	glBindFramebuffer(GL_FRAMEBUFFER, depthBuffer.fbo); {
 		glEnable(GL_DEPTH_TEST);
-		glViewport(0, 0, 500, 500);
+		glViewport(0, 0, depthWidth, depthHeight);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		shadow.use();
@@ -123,6 +128,7 @@ void querty(ew::Shader shader, ew::Shader shadow, ew::Model model, ew::Mesh plan
 	shader.setMat4("_Model", monkeyTransform.modelMatrix());
 	shader.setMat4("_ViewProj", camera.projectionMatrix() * camera.viewMatrix());
 	shader.setMat4("_LightViewProj", lightViewProj);
+	shader.setFloat("_Bias", debug.shadowBias);
 
 	model.draw();
 
@@ -198,6 +204,10 @@ void drawUI() {
 		ImGui::SliderFloat("Diffuse", &material.diffuse, 0.0f, 1.0f);
 		ImGui::SliderFloat("Specular", &material.specular, 0.0f, 1.0f);
 		ImGui::SliderFloat("Shininess", &material.shiness, 2.0f, 1024.0f);
+	}
+
+	if (ImGui::CollapsingHeader("Debug")) {
+		ImGui::SliderFloat("Shadow Bias", &debug.shadowBias, 0.01f, 0.035f);
 	}
 
 	ImGui::DragFloat3("Light Pos", &light.pos[0]);

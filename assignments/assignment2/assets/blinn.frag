@@ -22,12 +22,14 @@ uniform Material _Material;
 uniform vec3 _CameraPos;
 uniform Light _Light;
 
+uniform float _Bias;
+
 float shadowCalculation(vec4 fragPosLightSpace) {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5; 
     float closestDepth = texture(_ShadowMap, projCoords.xy).r;
     float currentDepth = projCoords.z;  
-    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;  
+    float shadow = currentDepth - _Bias > closestDepth  ? 1.0 : 0.0;  
 
     return shadow;
 }
