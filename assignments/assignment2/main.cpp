@@ -34,6 +34,9 @@ int depthWidth = 250, depthHeight = 250;
 float prevFrameTime;
 float deltaTime;
 
+float modelSpinSpeed = 1.0f;
+bool canModelSpin = true;
+
 ew::Camera camera;
 ew::CameraController cameraController;
 ew::Transform monkeyTransform;
@@ -50,8 +53,12 @@ struct DepthBuffer {
 		glGenTextures(1, &depth);
         glBindTexture(GL_TEXTURE_2D, depth);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, depthWidth, depthHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		
+		float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor); 
+
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	
@@ -86,6 +93,7 @@ void querty(ew::Shader shader, ew::Shader shadow, ew::Model model, ew::Mesh plan
 	const auto lightViewProj = lightProj * lightView;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, depthBuffer.fbo); {
+		glCullFace(GL_FRONT);
 		glEnable(GL_DEPTH_TEST);
 		glViewport(0, 0, depthWidth, depthHeight);
 		glClear(GL_DEPTH_BUFFER_BIT);
@@ -96,6 +104,8 @@ void querty(ew::Shader shader, ew::Shader shadow, ew::Model model, ew::Mesh plan
 
 		model.draw();
 	}
+	
+	glCullFace(GL_BACK);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glViewport(0, 0, screenWidth, screenHeight);
@@ -115,6 +125,10 @@ void querty(ew::Shader shader, ew::Shader shadow, ew::Model model, ew::Mesh plan
 	glBindTexture(GL_TEXTURE_2D, depthBuffer.depth);
 
 	shader.use();
+
+	if (canModelSpin) {
+		monkeyTransform.rotation = glm::rotate(monkeyTransform.rotation, deltaTime * modelSpinSpeed, glm::vec3(0.0, 1.0, 0.0));
+	}
 
 	shader.setInt("_MonkeyTexture", 0);
 	shader.setInt("_ShadowMap", 1);
@@ -206,7 +220,12 @@ void drawUI() {
 		ImGui::SliderFloat("Shininess", &material.shiness, 2.0f, 1024.0f);
 	}
 
-	if (ImGui::CollapsingHeader("Debug")) {
+	if (ImGui::CollapsingHeader("Model Spinning")) {
+		ImGui::Checkbox("Is Model Spinning", &canModelSpin);
+		ImGui::SliderFloat("Model Spin Rate", &modelSpinSpeed, 1.0f, 5.0f);
+	}
+
+	if (ImGui::CollapsingHeader("Shadows")) {
 		ImGui::SliderFloat("Shadow Bias", &debug.shadowBias, 0.01f, 0.035f);
 	}
 
@@ -222,7 +241,7 @@ void drawUI() {
 	}
 
 	ImGui::Text("Depth Image");
-	ImGui::Image((ImTextureID)(intptr_t)depthBuffer.depth, ImVec2(screenWidth, screenHeight));
+	ImGui::Image((ImTextureID)(intptr_t)depthBuffer.depth, ImVec2(350, 350));
 
 
 	ImGui::End();
