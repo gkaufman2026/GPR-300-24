@@ -83,7 +83,7 @@ struct Light {
 } light;
 
 struct Debug {
-	float shadowBias = 0.01f;
+	float shadowBias = 0.005f;
 } debug;
 
 void querty(ew::Shader shader, ew::Shader shadow, ew::Model model, ew::Mesh plane, GLuint texture) {
@@ -226,7 +226,7 @@ void drawUI() {
 	}
 
 	if (ImGui::CollapsingHeader("Shadows")) {
-		ImGui::SliderFloat("Shadow Bias", &debug.shadowBias, 0.01f, 0.035f);
+		ImGui::SliderFloat("Shadow Bias", &debug.shadowBias, 0.005f, 0.05f);
 	}
 
 	ImGui::DragFloat3("Light Pos", &light.pos[0]);

@@ -62,7 +62,7 @@ vec3 blinnPhong(vec3 normal, vec3 fragPos) {
 void main() {
 	vec3 color = texture(_MonkeyTexture, fs_in.UV).rgb;
     vec3 normal = normalize(fs_in.WorldNormal);
-    float shadow = shadowCalculation(fs_in.FragPosLightSpace, normal, normalize(_Light.pos - fs_in.WorldPos));  
+    float shadow = shadowCalculation(fs_in.FragPosLightSpace, normal, normalize(_Light.pos -fs_in.WorldPos));  
 
     vec3 lighting = blinnPhong(normal, fs_in.WorldPos);
     lighting *= (1.0 - shadow);
