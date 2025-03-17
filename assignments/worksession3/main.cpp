@@ -15,6 +15,13 @@
 #include <ew/cameraController.h>
 #include <ew/texture.h>
 
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
+
+#include <jk/framebuffer.h>
+
+#include <ew/procGen.h>
+
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 GLFWwindow* initWindow(const char* title, int width, int height);
 void drawUI();
@@ -27,18 +34,17 @@ float deltaTime;
 
 ew::Camera camera;
 ew::CameraController cameraController;
-ew::Transform monkeyTransform;
+ew::Transform monkeyTransform, lightTransform;
+jk::Framebuffer framebuffer;
+ew::Mesh sphere;
 
-// Customization UI Elements
-glm::vec3 ambientColor = glm::vec3(0.3, 0.4, 0.46);
-float modelSpinSpeed = 1.0f;
-bool canModelSpin = true;
+// UI ELEMENTS
+glm::vec3 lightPos = {0, 3, 0};
 
-struct Material {
-	float ambient = 1.0, diffuse = 0.5, specular = 0.5, shiness = 128;
-} material;
+float transformMultiplier = 2.0f;
+glm::vec2 monkeyAmount = {3, 3};
 
-void querty(ew::Shader shader, ew::Model model, GLuint texture) {
+void querty(ew::Shader shader, ew::Shader experimental, ew::Model model, ew::Mesh sphere, GLuint texture) {
 	// 1. Pipeline Definition 
 	
 	//After window initialization...
@@ -53,22 +59,23 @@ void querty(ew::Shader shader, ew::Model model, GLuint texture) {
 	glBindTexture(GL_TEXTURE_2D, texture);
 
 	shader.use();
-
-	if (canModelSpin) {
-		monkeyTransform.rotation = glm::rotate(monkeyTransform.rotation, deltaTime * modelSpinSpeed, glm::vec3(0.0, 1.0, 0.0));
-	}
-
-	shader.setInt("_MonkeyTexture", 0);
-	shader.setFloat("_Material.ambient", material.ambient);
-	shader.setFloat("_Material.diffuse", material.diffuse);
-	shader.setFloat("_Material.specular", material.specular);
-	shader.setFloat("_Material.shininess", material.shiness);
-	shader.setVec3("_AmbientColor", ambientColor);
-	shader.setVec3("_EyePos", camera.position);
 	shader.setMat4("_Model", monkeyTransform.modelMatrix());
+	shader.setMat4("_Light", lightTransform.modelMatrix());
 	shader.setMat4("_ViewProj", camera.projectionMatrix() * camera.viewMatrix());
 
-	model.draw();
+	for (int i = 0; i < monkeyAmount.x; i++) {
+		for (int y = 0; y < monkeyAmount.y; y++) {
+			shader.setMat4("_Model", glm::translate(glm::vec3(i * transformMultiplier, 0, y * transformMultiplier)));
+			shader.setMat4("_Light", glm::translate(glm::vec3(i * transformMultiplier, 0, y + 5 * transformMultiplier)));
+			sphere.draw();
+			model.draw();
+		}
+	}
+
+	experimental.use();
+	experimental.setInt("_Albedo", 0);
+	experimental.setInt("_Pos", 1);
+	experimental.setInt("_Normal", 2);
 }
 
 void resetCamera(ew::Camera* camera, ew::CameraController* controller) {
@@ -77,31 +84,28 @@ void resetCamera(ew::Camera* camera, ew::CameraController* controller) {
 	controller->yaw = controller->pitch = 0;
 }
 
-void resetMaterial(Material* material) {
-	material->ambient = 1.0;
-	material->diffuse = 0.5;
-	material->specular = 0.5;
-	material->shiness = 128;
-}
-
 int main() {
 	GLFWwindow* window = initWindow("Work Session 3", screenWidth, screenHeight);
 	GLuint brickTexture = ew::loadTexture("assets/brick_color.jpg");
 
-	ew::Shader litShader = ew::Shader("assets/lit.vert", "assets/lit.frag");
+	ew::Shader litShader = ew::Shader("assets/lighting.vert", "assets/lighting.frag");
+	ew::Shader geometry = ew::Shader("assets/geometry.vert", "assets/geometry.frag");
 	ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
+	sphere.load(ew::createSphere(0.5, 4));
 
 	camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
 	camera.target = glm::vec3(0.0f, 0.0f, 0.0f); //Look at the center of the scene
 	camera.aspectRatio = (float)screenWidth / screenHeight;
 	camera.fov = 60.0f; //Vertical field of view, in degrees
 
+	framebuffer = jk::createGTAFramebuffer(screenWidth, screenHeight, GL_RG16F);
+
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
-		float time = (float)glfwGetTime();
+		float time = (float) glfwGetTime();
 		deltaTime = time - prevFrameTime;
 		prevFrameTime = time;
 
@@ -109,7 +113,7 @@ int main() {
 		glClearColor(0.6f,0.8f,0.92f,1.0f);
 
 		// Main Render
-		querty(litShader, monkeyModel, brickTexture);
+		querty(litShader, geometry, monkeyModel, sphere, brickTexture);
 		cameraController.move(window, &camera, deltaTime);
 
 		drawUI();
@@ -125,35 +129,20 @@ void drawUI() {
 	ImGui::NewFrame();
 
 	ImGui::Begin("Settings");
-	if (ImGui::CollapsingHeader("Material")) {
-		ImGui::SliderFloat("Ambient", &material.ambient, 0.0f, 1.0f);
-		ImGui::SliderFloat("Diffuse", &material.diffuse, 0.0f, 1.0f);
-		ImGui::SliderFloat("Specular", &material.specular, 0.0f, 1.0f);
-		ImGui::SliderFloat("Shininess", &material.shiness, 2.0f, 1024.0f);
-	}
+	ImGui::SliderFloat("Distance Multiplier", &transformMultiplier, 1, 5);
+	ImGui::SliderFloat("Model Row #", &monkeyAmount.x, 1, 150);
+	ImGui::SliderFloat("Model Column #", &monkeyAmount.y, 1, 150);
 
-	// Wanted to create as many options as possible for later usage
-	if (ImGui::CollapsingHeader("Ambient Color")) {
-		ImGui::SliderFloat("R", &ambientColor.x, 0.0f, 1.0f);
-		ImGui::SliderFloat("G", &ambientColor.y, 0.0f, 1.0f);
-		ImGui::SliderFloat("B", &ambientColor.z, 0.0f, 1.0f);
-	}
+	ImGui::SliderFloat("Sprint Speed", &cameraController.sprintMoveSpeed, 1, 10);
 
-	if (ImGui::CollapsingHeader("Model Spinning")) {
-		ImGui::Checkbox("Is Model Spinning", &canModelSpin);
-		ImGui::SliderFloat("Model Spin Rate", &modelSpinSpeed, 1.0f, 5.0f);
-	}
+	int collectedAmount = monkeyAmount.x * monkeyAmount.y;
+	ImGui::Text("Amount of Suzannes: ");
+	ImGui::Text("%s", std::to_string(collectedAmount).c_str());
 
-	if (ImGui::Button("Reset Camera")) {
-		resetCamera(&camera, &cameraController);
-	}
-	if (ImGui::Button("Reset Material")) {
-		resetMaterial(&material);
-	}
 
-	if (ImGui::Button("Reset Ambient Color")) {
-		ambientColor = glm::vec3(0.3, 0.4, 0.46);
-	}
+	ImGui::Image((ImTextureID)(intptr_t)framebuffer.color0, ImVec2(screenWidth, screenHeight));
+	ImGui::Image((ImTextureID)(intptr_t)framebuffer.color1, ImVec2(screenWidth, screenHeight));
+	ImGui::Image((ImTextureID)(intptr_t)framebuffer.color2, ImVec2(screenWidth, screenHeight));
 
 	ImGui::End();
 
@@ -161,8 +150,7 @@ void drawUI() {
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void framebufferSizeCallback(GLFWwindow* window, int width, int height)
-{
+void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 	screenWidth = width;
 	screenHeight = height;

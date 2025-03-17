@@ -13,7 +13,7 @@ out Surface {
 } vs_out;
 
 void main() {
-	vs_out.WorldPos = vec3(_Model * vec4(vPos,1.0));
+	vs_out.WorldPos = vec3(_Model * vec4(vPos, 1.0));
 	vs_out.WorldNormal = transpose(inverse(mat3(_Model))) * vNormal;
 	vs_out.UV = vUV;
 
