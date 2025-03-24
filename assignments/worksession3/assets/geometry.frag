@@ -1,16 +1,18 @@
 #version 450
 
-out vec4 FragColor;
-out vec4 FragPos;
-out vec4 FragNormal;
+layout (location = 0) out vec3 FragPos; // worldspace pos
+layout (location = 1) out vec3 FragNormal; // worldspace norm
+layout (location = 2) out vec3 FragAlbedo;
 
-in vec2 vs_texcoord;
+in Surface {
+    vec3 WorldPos, WorldNormal;
+    vec2 UV;
+} fs_in;
 
-uniform sampler2D _Albedo, _Pos, _Normal;
+uniform sampler2D _Texture;
 
 void main (){
-    vec3 color = texture(_Albedo, vs_texcoord).rgb;
-    FragPos =
-    FragNormal =
-    FragColor = vec4(color, 1.0);
+    FragPos = fs_in.WorldPos;
+    FragNormal = normalize(fs_in.WorldNormal);
+    FragAlbedo = texture(_Texture, fs_in.UV).rgb;
 }

@@ -26,6 +26,17 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 GLFWwindow* initWindow(const char* title, int width, int height);
 void drawUI();
 
+static float quadVertices[] = {
+    // pos (x, y) texcoord (u, v)
+    -1.0f,  1.0f, 0.0f, 1.0f,
+    -1.0f, -1.0f, 0.0f, 0.0f,
+	1.0f, -1.0f, 1.0f, 0.0f,
+
+    -1.0f,  1.0f, 0.0f, 1.0f,
+	1.0f, -1.0f, 1.0f, 0.0f,
+	1.0f,  1.0f, 1.0f, 1.0f,
+};
+
 //Global state
 int screenWidth = 1080;
 int screenHeight = 720;
@@ -38,13 +49,17 @@ ew::Transform monkeyTransform, lightTransform;
 jk::Framebuffer framebuffer;
 ew::Mesh sphere;
 
+struct FullscreenQuad {
+	GLuint vao, vbo;
+} fullscreenQuad; 
+
 // UI ELEMENTS
 glm::vec3 lightPos = {0, 3, 0};
 
 float transformMultiplier = 2.0f;
 glm::vec2 monkeyAmount = {3, 3};
 
-void querty(ew::Shader shader, ew::Shader experimental, ew::Model model, ew::Mesh sphere, GLuint texture) {
+void querty(ew::Shader shader, ew::Model model, ew::Mesh sphere, GLuint texture) {
 	// 1. Pipeline Definition 
 	
 	//After window initialization...
@@ -60,22 +75,17 @@ void querty(ew::Shader shader, ew::Shader experimental, ew::Model model, ew::Mes
 
 	shader.use();
 	shader.setMat4("_Model", monkeyTransform.modelMatrix());
-	shader.setMat4("_Light", lightTransform.modelMatrix());
 	shader.setMat4("_ViewProj", camera.projectionMatrix() * camera.viewMatrix());
+	shader.setInt("_Texture", texture);
 
 	for (int i = 0; i < monkeyAmount.x; i++) {
 		for (int y = 0; y < monkeyAmount.y; y++) {
 			shader.setMat4("_Model", glm::translate(glm::vec3(i * transformMultiplier, 0, y * transformMultiplier)));
-			shader.setMat4("_Light", glm::translate(glm::vec3(i * transformMultiplier, 0, y + 5 * transformMultiplier)));
-			sphere.draw();
+			// shader.setMat4("_Light", glm::translate(glm::vec3(i * transformMultiplier, 0, y + 5 * transformMultiplier)));
+			// sphere.draw();
 			model.draw();
 		}
 	}
-
-	experimental.use();
-	experimental.setInt("_Albedo", 0);
-	experimental.setInt("_Pos", 1);
-	experimental.setInt("_Normal", 2);
 }
 
 void resetCamera(ew::Camera* camera, ew::CameraController* controller) {
@@ -100,7 +110,20 @@ int main() {
 
 	framebuffer = jk::createGTAFramebuffer(screenWidth, screenHeight, GL_RG16F);
 
-	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+	glGenVertexArrays(1, &fullscreenQuad.vao);
+	glGenBuffers(1, &fullscreenQuad.vbo);
+
+	glBindVertexArray(fullscreenQuad.vao);
+	glBindBuffer(GL_ARRAY_BUFFER, fullscreenQuad.vbo);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1,2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*) (sizeof(float) * 2));
+	
+	glBindVertexArray(0);
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
@@ -113,7 +136,7 @@ int main() {
 		glClearColor(0.6f,0.8f,0.92f,1.0f);
 
 		// Main Render
-		querty(litShader, geometry, monkeyModel, sphere, brickTexture);
+		querty(geometry, monkeyModel, sphere, brickTexture);
 		cameraController.move(window, &camera, deltaTime);
 
 		drawUI();
@@ -129,16 +152,15 @@ void drawUI() {
 	ImGui::NewFrame();
 
 	ImGui::Begin("Settings");
-	ImGui::SliderFloat("Distance Multiplier", &transformMultiplier, 1, 5);
-	ImGui::SliderFloat("Model Row #", &monkeyAmount.x, 1, 150);
-	ImGui::SliderFloat("Model Column #", &monkeyAmount.y, 1, 150);
+	ImGui::DragFloat("Distance Multiplier", &transformMultiplier, 1, 1, 5);
+	ImGui::DragFloat("Model Row #", &monkeyAmount.x, 1, 1, 150);
+	ImGui::DragFloat("Model Column #", &monkeyAmount.y, 1, 1, 150);
 
-	ImGui::SliderFloat("Sprint Speed", &cameraController.sprintMoveSpeed, 1, 10);
+	ImGui::DragFloat("Sprint Speed", &cameraController.sprintMoveSpeed, 1, 1, 10);
 
 	int collectedAmount = monkeyAmount.x * monkeyAmount.y;
 	ImGui::Text("Amount of Suzannes: ");
 	ImGui::Text("%s", std::to_string(collectedAmount).c_str());
-
 
 	ImGui::Image((ImTextureID)(intptr_t)framebuffer.color0, ImVec2(screenWidth, screenHeight));
 	ImGui::Image((ImTextureID)(intptr_t)framebuffer.color1, ImVec2(screenWidth, screenHeight));
