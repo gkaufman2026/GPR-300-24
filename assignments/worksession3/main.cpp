@@ -60,32 +60,37 @@ float transformMultiplier = 2.0f;
 glm::vec2 monkeyAmount = {3, 3};
 
 void querty(ew::Shader shader, ew::Model model, ew::Mesh sphere, GLuint texture) {
-	// 1. Pipeline Definition 
-	
-	//After window initialization...
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK); //Back face culling
-	glEnable(GL_DEPTH_TEST); //Depth testing
 
-	// 2. GFX Pass
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.fbo);
+	{
+		// 1. Pipeline Definition 
+		
+		//After window initialization...
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK); //Back face culling
+		glEnable(GL_DEPTH_TEST); //Depth testing
+		
+		glViewport(0, 0, 500, 500);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture);
+		// 2. GFX Pass
+		glClearColor(0.0f,0.0f,0.0f,0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	shader.use();
-	shader.setMat4("_Model", monkeyTransform.modelMatrix());
-	shader.setMat4("_ViewProj", camera.projectionMatrix() * camera.viewMatrix());
-	shader.setInt("_Texture", texture);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
 
-	for (int i = 0; i < monkeyAmount.x; i++) {
-		for (int y = 0; y < monkeyAmount.y; y++) {
-			shader.setMat4("_Model", glm::translate(glm::vec3(i * transformMultiplier, 0, y * transformMultiplier)));
-			// shader.setMat4("_Light", glm::translate(glm::vec3(i * transformMultiplier, 0, y + 5 * transformMultiplier)));
-			// sphere.draw();
-			model.draw();
+		shader.use();
+		shader.setMat4("_ViewProj", camera.projectionMatrix() * camera.viewMatrix());
+		shader.setInt("_Texture", 0);
+
+		for (int i = 0; i < monkeyAmount.x; i++) {
+			for (int y = 0; y < monkeyAmount.y; y++) {
+				shader.setMat4("_Model", glm::translate(glm::vec3(i * transformMultiplier, 0, y * transformMultiplier)));
+				model.draw();
+			}
 		}
 	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void resetCamera(ew::Camera* camera, ew::CameraController* controller) {
@@ -133,11 +138,14 @@ int main() {
 		prevFrameTime = time;
 
 		//RENDER
-		glClearColor(0.6f,0.8f,0.92f,1.0f);
+		
 
 		// Main Render
 		querty(geometry, monkeyModel, sphere, brickTexture);
 		cameraController.move(window, &camera, deltaTime);
+
+		glClearColor(0.0f,0.0f,0.0f,0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		drawUI();
 
