@@ -85,8 +85,7 @@ void querty(ew::Shader shader, ew::Model model, ew::Mesh sphere, GLuint texture)
 
 		for (int i = 0; i < monkeyAmount.x; i++) {
 			for (int y = 0; y < monkeyAmount.y; y++) {
-				shader.setMat4("_Model", glm::translate(glm::vec3(i * transformMultiplier, 0, y * transformMultiplier)));
-				model.draw();
+				shader.setMat4("_Model", glm::translate(glm::vec3(i * transformMultiplier, 0, y * transformMultiplier)));				model.draw();
 			}
 		}
 	}
