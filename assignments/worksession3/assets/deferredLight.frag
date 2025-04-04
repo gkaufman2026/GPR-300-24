@@ -73,5 +73,5 @@ void main() {
 	}
 
 	vec3 albedo = texture(FragAlbedo, fs_in.UV).rgb;
-	FragColor = vec4(albedo * totalLight, 0);
+	FragColor = vec4(albedo * totalLight, 1.0);
 }

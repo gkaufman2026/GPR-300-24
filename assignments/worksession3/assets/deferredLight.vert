@@ -17,5 +17,5 @@ void main() {
 	vs_out.WorldNormal = transpose(inverse(mat3(_Model))) * vNormal;
 	vs_out.UV = vUV;
 
-	gl_Position = _ViewProj * _Model * vec4(vPos, 1.0);
+	gl_Position = vec4(vPos.xy, 0.0, 1.0);
 }
