@@ -14,6 +14,5 @@ uniform sampler2D _Texture;
 void main (){
     FragPos = vec4(fs_in.WorldPos, 1.0);
     FragNormal = vec4(normalize(fs_in.WorldNormal), 1.0);
-    FragAlbedo = vec4(0.5, 0.5, 0.5, 1.0);
-    //vec4(texture(_Texture, fs_in.UV).rgb, 1.0);
+    FragAlbedo = vec4(texture(_Texture, fs_in.UV).rgb, 1.0);
 }

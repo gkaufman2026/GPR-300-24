@@ -48,10 +48,26 @@ ew::CameraController cameraController;
 ew::Transform monkeyTransform, lightTransform;
 jk::Framebuffer framebuffer;
 ew::Mesh sphere;
+ew::Mesh plane;
 
 struct FullscreenQuad {
 	GLuint vao, vbo;
 } fullscreenQuad; 
+
+struct GBuffer {
+	int width = 250;
+	int height = 250;
+	GLuint colorBuffer[3];
+} gBuffer; 
+
+struct PointLight {
+	glm::vec3 pos;
+	glm::vec4 color;
+	float radius;
+};
+
+const int MAX_POINT_LIGHTS = 64;
+PointLight pointLights[MAX_POINT_LIGHTS];
 
 // UI ELEMENTS
 glm::vec3 lightPos = {0, 3, 0};
@@ -59,7 +75,7 @@ glm::vec3 lightPos = {0, 3, 0};
 float transformMultiplier = 2.0f;
 glm::vec2 monkeyAmount = {3, 3};
 
-void querty(ew::Shader shader, ew::Model model, ew::Mesh sphere, GLuint texture) {
+void querty(ew::Shader shader, ew::Model model, ew::Mesh plane , GLuint texture) {
 
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.fbo);
 	{
@@ -77,7 +93,7 @@ void querty(ew::Shader shader, ew::Model model, ew::Mesh sphere, GLuint texture)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindTexture(GL_TEXTURE_2D, texture);
 
 		shader.use();
 		shader.setMat4("_ViewProj", camera.projectionMatrix() * camera.viewMatrix());
@@ -105,7 +121,8 @@ int main() {
 	ew::Shader litShader = ew::Shader("assets/lighting.vert", "assets/lighting.frag");
 	ew::Shader geometry = ew::Shader("assets/geometry.vert", "assets/geometry.frag");
 	ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
-	sphere.load(ew::createSphere(0.5, 4));
+
+	plane.load(ew::createPlane(50.f, 50.f, 100));
 
 	camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
 	camera.target = glm::vec3(0.0f, 0.0f, 0.0f); //Look at the center of the scene
@@ -140,7 +157,7 @@ int main() {
 		
 
 		// Main Render
-		querty(geometry, monkeyModel, sphere, brickTexture);
+		querty(geometry, monkeyModel, plane, brickTexture);
 		cameraController.move(window, &camera, deltaTime);
 
 		glClearColor(0.0f,0.0f,0.0f,0.0f);
@@ -172,7 +189,7 @@ void drawUI() {
 	ImGui::Image((ImTextureID)(intptr_t)framebuffer.color0, ImVec2(screenWidth, screenHeight));
 	ImGui::Image((ImTextureID)(intptr_t)framebuffer.color1, ImVec2(screenWidth, screenHeight));
 	ImGui::Image((ImTextureID)(intptr_t)framebuffer.color2, ImVec2(screenWidth, screenHeight));
-
+	
 	ImGui::End();
 
 	ImGui::Render();
