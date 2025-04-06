@@ -16,20 +16,14 @@ struct PointLight {
 	float radius;
 };
 
-#define MAX_POINT_LIGHTS 1024
-layout (std140, binding = 0) uniform AdditionalLights {
-	PointLight _Lights[MAX_POINT_LIGHTS];
-};
+#define MAX_POINT_LIGHTS 64
+uniform PointLight _PointLights[MAX_POINT_LIGHTS];
 
 uniform layout (binding = 0) sampler2D FragPos;
 uniform layout (binding = 1) sampler2D FragNormal;
 uniform layout (binding = 2) sampler2D FragAlbedo;
 
 uniform Material _Material;
-uniform sampler2D _Texture;
-uniform sampler2D _Normal;
-uniform vec3 _LightDirection = vec3(0, -1, 0);
-uniform vec3 _LightColor = vec3(1.0);
 uniform vec3 _AmbientColor = vec3(0.5, 0.4, 0.5);
 uniform vec3 _EyePos;
 
@@ -66,10 +60,10 @@ vec3 calcPointLight(PointLight light, vec3 normal, vec3 pos) {
 void main() {
 	vec3 pos = texture(FragPos, fs_in.UV).rgb;
 	vec3 normal = texture(FragNormal, fs_in.UV).rgb;
-	vec3 totalLight = vec3(0.);
-
+	vec3 totalLight = vec3(0);
+	
 	for (int i = 0; i < MAX_POINT_LIGHTS; i++) {
-		totalLight += calcPointLight(_Lights[i], normal, pos);
+		totalLight += calcPointLight(_PointLights[i], normal, pos);
 	}
 
 	vec3 albedo = texture(FragAlbedo, fs_in.UV).rgb;

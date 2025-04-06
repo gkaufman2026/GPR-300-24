@@ -52,11 +52,13 @@ jk::Framebuffer framebuffer;
 ew::Mesh plane;
 ew::Mesh sphereMesh;
 
-
 struct FullscreenQuad {
     GLuint vao, vbo;
 } fullscreenQuad;
 
+struct Material {
+	float ambient = 1.0, diffuse = 0.5, specular = 0.5, shiness = 128;
+} material;
 
 struct GBuffer {
     int width = 250;
@@ -77,7 +79,7 @@ PointLight pointLights[MAX_POINT_LIGHTS];
 glm::vec3 lightPos = {0, 3, 0};
 
 float transformMultiplier = 2.0f;
-glm::vec2 monkeyAmount = {10, 10};
+glm::vec2 monkeyAmount = {3, 3};
 
 void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Model model, ew::Mesh sphere, ew::Mesh plane, GLuint texture) {
 
@@ -98,7 +100,6 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
 
         shader.use();
         shader.setMat4("_ViewProj", camera.projectionMatrix() * camera.viewMatrix());
-        shader.setInt("_Texture", 0);
 
         for (int i = 0; i < monkeyAmount.x; i++) {
             for (int y = 0; y < monkeyAmount.y; y++) {
@@ -110,29 +111,36 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
         plane.draw();
 
         ew::Transform lightTransforms[MAX_POINT_LIGHTS];
-    } glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    } glBindFramebuffer(GL_FRAMEBUFFER, 0); {
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_DEPTH_TEST);
 
-        //glBindVertexArray(fullscreenQuad.vao);
+        glBindVertexArray(fullscreenQuad.vao);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, framebuffer.color0);
 
-        glActiveTexture(GL_TEXTURE1);
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, framebuffer.color1);
 
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, framebuffer.color2);
        
         deferred.use();
+        deferred.setInt("FragPos", 0);
+        deferred.setInt("FragNormal", 1);
+        deferred.setInt("FragAlbedo", 2);
        
         for (int i = 0; i < MAX_POINT_LIGHTS; i++) {
             std::string prefix = "_Lights[" + std::to_string(i) + "].";
             deferred.setVec3(prefix + "position", pointLights[i].pos);
             deferred.setVec3(prefix + "color", pointLights[i].color);
             deferred.setFloat(prefix + "radius", pointLights[i].radius);
+            deferred.setFloat("_Material.ambient", material.ambient);
+            deferred.setFloat("_Material.diffuse", material.diffuse);
+            deferred.setFloat("_Material.specular", material.specular);
+            deferred.setFloat("_Material.shininess", material.shiness);
         }
 
         lightOrb.use();
@@ -153,7 +161,7 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
-  
+    }
 }
 
 void resetCamera(ew::Camera* camera, ew::CameraController* controller) {
@@ -171,7 +179,7 @@ int main() {
     ew::Shader lightOrb = ew::Shader("assets/lightOrb.vert", "assets/lightOrb.frag");
     ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
    
-    sphereMesh = ew::Mesh(ew::createSphere(1.0f, 5));
+    sphereMesh = ew::Mesh(ew::createSphere(1.0f, 8));
     plane.load(ew::createPlane(50.f, 50.f, 100));
 
     camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
@@ -227,19 +235,22 @@ void drawUI() {
 
     ImGui::Begin("Settings");
     ImGui::DragFloat("Distance Multiplier", &transformMultiplier, 1, 1, 5);
-    ImGui::DragFloat("Model Row #", &monkeyAmount.x, 1, 1, 150);
-    ImGui::DragFloat("Model Column #", &monkeyAmount.y, 1, 1, 150);
+    ImGui::DragFloat("Model Row #", &monkeyAmount.x, 1, 1, 32);
+    ImGui::DragFloat("Model Column #", &monkeyAmount.y, 1, 1, 32);
 
     ImGui::DragFloat("Sprint Speed", &cameraController.sprintMoveSpeed, 1, 1, 10);
 
     int collectedAmount = monkeyAmount.x * monkeyAmount.y;
     ImGui::Text("Amount of Suzannes: ");
     ImGui::Text("%s", std::to_string(collectedAmount).c_str());
-    
-    ImGui::Image((ImTextureID)(intptr_t)framebuffer.color0, ImVec2(screenWidth, screenHeight));
-    ImGui::Image((ImTextureID)(intptr_t)framebuffer.color1, ImVec2(screenWidth, screenHeight));
-    ImGui::Image((ImTextureID)(intptr_t)framebuffer.color2, ImVec2(screenWidth, screenHeight));
    
+    ImGui::End();
+
+    ImGui::Begin("G-Buffer");
+
+    ImGui::Image((ImTextureID)(intptr_t)framebuffer.color0, ImVec2(100, 100));
+    ImGui::Image((ImTextureID)(intptr_t)framebuffer.color1, ImVec2(100, 100));
+    ImGui::Image((ImTextureID)(intptr_t)framebuffer.color2, ImVec2(100, 100));
     ImGui::End();
 
     ImGui::Render();
@@ -288,5 +299,5 @@ GLFWwindow* initWindow(const char* title, int width, int height) {
 }
 
 glm::vec3 getLightColor() {
-    return glm::vec3(rand() % 2, rand() % 2, rand() % 2);
+    return glm::vec3((rand() % 256) / 255.0f, (rand() % 256) / 255.0f, (rand() % 256));
 }
