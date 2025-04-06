@@ -1,6 +1,7 @@
 #version 450
 
 out vec4 FragColor;
+in vec2 UV;
 
 in Surface {
 	vec3 WorldPos, WorldNormal;
@@ -16,7 +17,7 @@ struct PointLight {
 	float radius;
 };
 
-#define MAX_POINT_LIGHTS 64
+#define MAX_POINT_LIGHTS 128
 uniform PointLight _PointLights[MAX_POINT_LIGHTS];
 
 uniform layout (binding = 0) sampler2D FragPos;
@@ -58,14 +59,14 @@ vec3 calcPointLight(PointLight light, vec3 normal, vec3 pos) {
 }
 
 void main() {
-	vec3 pos = texture(FragPos, fs_in.UV).rgb;
-	vec3 normal = texture(FragNormal, fs_in.UV).rgb;
+	vec3 pos = texture(FragPos, UV).rgb;
+	vec3 normal = texture(FragNormal, UV).rgb;
 	vec3 totalLight = vec3(0);
 	
 	for (int i = 0; i < MAX_POINT_LIGHTS; i++) {
 		totalLight += calcPointLight(_PointLights[i], normal, pos);
 	}
 
-	vec3 albedo = texture(FragAlbedo, fs_in.UV).rgb;
+	vec3 albedo = texture(FragAlbedo, UV).rgb;
 	FragColor = vec4(albedo * totalLight, 1.0);
 }
