@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <iostream>
 
 #include <ew/external/glad.h>
 
@@ -23,6 +24,7 @@
 #include <ew/procGen.h>
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+void registerLights();
 GLFWwindow* initWindow(const char* title, int width, int height);
 void drawUI();
 
@@ -30,11 +32,11 @@ static float quadVertices[] = {
     // pos (x, y) texcoord (u, v)
     -1.0f,  1.0f, 0.0f, 1.0f,
     -1.0f, -1.0f, 0.0f, 0.0f,
-	1.0f, -1.0f, 1.0f, 0.0f,
+	 1.0f, -1.0f, 1.0f, 0.0f,
 
     -1.0f,  1.0f, 0.0f, 1.0f,
-	1.0f, -1.0f, 1.0f, 0.0f,
-	1.0f,  1.0f, 1.0f, 1.0f,
+	 1.0f, -1.0f, 1.0f, 0.0f,
+	 1.0f,  1.0f, 1.0f, 1.0f,
 };
 
 //Global state
@@ -77,7 +79,7 @@ glm::vec3 lightPos = {0, 3, 0};
 float transformMultiplier = 2.0f;
 glm::vec2 monkeyAmount = {3, 3};
 
-void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Model model, ew::Mesh plane , GLuint texture) {
+void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Model model, ew::Mesh sphere, ew::Mesh plane, GLuint texture) {
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.fbo); {
         // 1. Pipeline Definition
@@ -106,6 +108,8 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
                 model.draw();
             }
         }
+
+        plane.draw();
 
         ew::Transform lightTransforms[MAX_POINT_LIGHTS];
     }
@@ -141,14 +145,14 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
         lightOrb.setMat4("_ViewProjection", camera.projectionMatrix() * camera.viewMatrix());
         for (int i = 0; i < (monkeyAmount.x + monkeyAmount.y); i++) {
             glm::mat4 m = glm::mat4(1.0f);
-            m = glm::translate(m, pointLights[i].pos);
+            m = glm::translate(m, glm::vec3(pointLights[i].pos.x, pointLights[i].pos.y + 5, pointLights[i].pos.z));
             m = glm::scale(m, glm::vec3(0.2f));
         }
 
 		for (int i = 0; i < monkeyAmount.x; i++) {
 			//lightOrb.setVec3("_Color", pointLights[i].color);
 			for (int y = 0; y < monkeyAmount.y; y++) {
-				sphereMesh.draw();
+                sphere.draw();
 			}
 		}
    
@@ -173,10 +177,8 @@ int main() {
     ew::Shader lightOrb = ew::Shader("assets/lightOrb.vert", "assets/lightOrb.frag");
     ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
    
-    sphereMesh = ew::Mesh(ew::createSphere(1.0f, 5));
+    sphereMesh = ew::Mesh(ew::createSphere(1.0f, 8));
     plane.load(ew::createPlane(50.f, 50.f, 100));
-
-    //registerLights();
 
     camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
     camera.target = glm::vec3(0.0f, 0.0f, 0.0f); //Look at the center of the scene
@@ -184,6 +186,8 @@ int main() {
     camera.fov = 60.0f; //Vertical field of view, in degrees
 
     framebuffer = jk::createGTAFramebuffer(screenWidth, screenHeight, GL_RG16F);
+
+    registerLights();
 
     glGenVertexArrays(1, &fullscreenQuad.vao);
     glGenBuffers(1, &fullscreenQuad.vbo);
@@ -209,7 +213,7 @@ int main() {
 
         //RENDER
         // Main Render
-        querty(geometry, deferred, lightOrb, monkeyModel, plane, brickTexture);
+        querty(geometry, deferred, lightOrb, monkeyModel, sphereMesh, plane, brickTexture);
         cameraController.move(window, &camera, deltaTime);
 
         drawUI();

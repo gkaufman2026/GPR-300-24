@@ -59,7 +59,7 @@ vec3 calcPointLight(PointLight light, vec3 normal, vec3 pos) {
 	lightColor += _AmbientColor * _Material.ambient;
 
 	float d = length(diff);
-	//lightColor *= attenuate(d, light.radius);
+	lightColor *= attenateExponential(d, light.radius);
 	return lightColor;
 }
 
