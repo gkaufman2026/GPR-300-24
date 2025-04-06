@@ -24,7 +24,7 @@
 #include <ew/procGen.h>
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
-void registerLights();
+glm::vec3 getLightColor();
 GLFWwindow* initWindow(const char* title, int width, int height);
 void drawUI();
 
@@ -66,7 +66,7 @@ struct GBuffer {
 
 struct PointLight {
     glm::vec3 pos;
-    glm::vec3 color = glm::vec3(0.0, 0.0, 1);
+    glm::vec3 color = glm::vec3(0.0, 0.0, 1.0);
     float radius;
 };
 
@@ -77,7 +77,7 @@ PointLight pointLights[MAX_POINT_LIGHTS];
 glm::vec3 lightPos = {0, 3, 0};
 
 float transformMultiplier = 2.0f;
-glm::vec2 monkeyAmount = {3, 3};
+glm::vec2 monkeyAmount = {10, 10};
 
 void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Model model, ew::Mesh sphere, ew::Mesh plane, GLuint texture) {
 
@@ -88,8 +88,6 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK); //Back face culling
         glEnable(GL_DEPTH_TEST); //Depth testing
-       
-        //glViewport(0, 0, 500, 500);
 
         // 2. GFX Pass
         glClearColor(0.0f,0.0f,0.0f,1.0f);
@@ -112,14 +110,13 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
         plane.draw();
 
         ew::Transform lightTransforms[MAX_POINT_LIGHTS];
-    }
+    } glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0); {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glDisable(GL_DEPTH_TEST);
 
-        glBindVertexArray(fullscreenQuad.vao);
+        //glBindVertexArray(fullscreenQuad.vao);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, framebuffer.color0);
 
@@ -138,9 +135,6 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
             deferred.setFloat(prefix + "radius", pointLights[i].radius);
         }
 
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glBindVertexArray(0);
-
         lightOrb.use();
         lightOrb.setMat4("_ViewProjection", camera.projectionMatrix() * camera.viewMatrix());
         for (int i = 0; i < (monkeyAmount.x + monkeyAmount.y); i++) {
@@ -150,16 +144,17 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
         }
 
 		for (int i = 0; i < monkeyAmount.x; i++) {
-			//lightOrb.setVec3("_Color", pointLights[i].color);
+            lightOrb.setVec3("_Color", pointLights[i].color);
 			for (int y = 0; y < monkeyAmount.y; y++) {
+                lightOrb.setMat4("_Model", glm::translate(glm::vec3(i * transformMultiplier, 0, y * transformMultiplier)));
                 sphere.draw();
 			}
 		}
-   
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-}
 
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+  
+}
 
 void resetCamera(ew::Camera* camera, ew::CameraController* controller) {
     camera->position = glm::vec3(0, 0, 5.0f);
@@ -171,13 +166,12 @@ int main() {
     GLFWwindow* window = initWindow("Work Session 3", screenWidth, screenHeight);
     GLuint brickTexture = ew::loadTexture("assets/brick_color.jpg");
 
-    ew::Shader litShader = ew::Shader("assets/lighting.vert", "assets/lighting.frag");
     ew::Shader geometry = ew::Shader("assets/geometry.vert", "assets/geometry.frag");
     ew::Shader deferred = ew::Shader("assets/deferredLight.vert", "assets/deferredLight.frag");
     ew::Shader lightOrb = ew::Shader("assets/lightOrb.vert", "assets/lightOrb.frag");
     ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
    
-    sphereMesh = ew::Mesh(ew::createSphere(1.0f, 8));
+    sphereMesh = ew::Mesh(ew::createSphere(1.0f, 5));
     plane.load(ew::createPlane(50.f, 50.f, 100));
 
     camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
@@ -187,7 +181,9 @@ int main() {
 
     framebuffer = jk::createGTAFramebuffer(screenWidth, screenHeight, GL_RG16F);
 
-    registerLights();
+    for (int i = 0; i < (monkeyAmount.x + monkeyAmount.y); i++) {
+        pointLights[i].color = getLightColor();
+    }
 
     glGenVertexArrays(1, &fullscreenQuad.vao);
     glGenBuffers(1, &fullscreenQuad.vbo);
@@ -239,7 +235,7 @@ void drawUI() {
     int collectedAmount = monkeyAmount.x * monkeyAmount.y;
     ImGui::Text("Amount of Suzannes: ");
     ImGui::Text("%s", std::to_string(collectedAmount).c_str());
-
+    
     ImGui::Image((ImTextureID)(intptr_t)framebuffer.color0, ImVec2(screenWidth, screenHeight));
     ImGui::Image((ImTextureID)(intptr_t)framebuffer.color1, ImVec2(screenWidth, screenHeight));
     ImGui::Image((ImTextureID)(intptr_t)framebuffer.color2, ImVec2(screenWidth, screenHeight));
@@ -248,16 +244,6 @@ void drawUI() {
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
-
-void registerLights() {
-    srand(0);
-    for (int i = 0; i < monkeyAmount.x; i++) {
-        for (int j = 0; j < monkeyAmount.y; j++) {
-            pointLights[i].color = glm::vec3(rand() % 2, rand() % 2, rand() % 2);
-        }
-    }
 }
 
 
@@ -299,4 +285,8 @@ GLFWwindow* initWindow(const char* title, int width, int height) {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init();
     return window;
+}
+
+glm::vec3 getLightColor() {
+    return glm::vec3(rand() % 2, rand() % 2, rand() % 2);
 }
