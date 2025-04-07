@@ -1,7 +1,6 @@
 #version 450
 
 out vec4 FragColor;
-in vec2 UV;
 
 in Surface {
 	vec3 WorldPos, WorldNormal;
@@ -20,9 +19,9 @@ struct PointLight {
 #define MAX_POINT_LIGHTS 128
 uniform PointLight _PointLights[MAX_POINT_LIGHTS];
 
-uniform layout (binding = 0) sampler2D FragPos;
-uniform layout (binding = 1) sampler2D FragNormal;
-uniform layout (binding = 2) sampler2D FragAlbedo;
+uniform sampler2D FragPos;
+uniform sampler2D FragNormal;
+uniform sampler2D FragAlbedo;
 
 uniform Material _Material;
 uniform vec3 _AmbientColor = vec3(0.5, 0.4, 0.5);
@@ -59,6 +58,7 @@ vec3 calcPointLight(PointLight light, vec3 normal, vec3 pos) {
 }
 
 void main() {
+	vec2 UV = gl_FragCoord.xy / textureSize(FragPos, 0);
 	vec3 pos = texture(FragPos, UV).rgb;
 	vec3 normal = texture(FragNormal, UV).rgb;
 	vec3 totalLight = vec3(0);
@@ -68,5 +68,5 @@ void main() {
 	}
 
 	vec3 albedo = texture(FragAlbedo, UV).rgb;
-	FragColor = vec4(albedo * totalLight, 1.0);
+	FragColor = vec4(albedo, 1.0);
 }

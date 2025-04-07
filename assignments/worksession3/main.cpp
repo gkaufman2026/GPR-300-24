@@ -47,7 +47,8 @@ float deltaTime;
 
 ew::Camera camera;
 ew::CameraController cameraController;
-ew::Transform monkeyTransform, lightTransform;
+ew::Transform monkeyTransform;
+ew::Transform planeTransform;
 jk::Framebuffer framebuffer;
 ew::Mesh plane;
 ew::Mesh sphereMesh;
@@ -107,21 +108,20 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
                 model.draw();
             }
         }
-
+        planeTransform.position = glm::vec3(0, -2, 0);
+        shader.setMat4("_Model", planeTransform.modelMatrix());
         plane.draw();
-
-        ew::Transform lightTransforms[MAX_POINT_LIGHTS];
     } glBindFramebuffer(GL_FRAMEBUFFER, 0); {
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_DEPTH_TEST);
 
         glBindVertexArray(fullscreenQuad.vao);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, framebuffer.color0);
 
-        glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, framebuffer.color1);
 
         glActiveTexture(GL_TEXTURE2);
@@ -143,6 +143,10 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
             deferred.setFloat("_Material.shininess", material.shiness);
         }
 
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+
+        glEnable(GL_DEPTH_TEST);
         lightOrb.use();
         lightOrb.setMat4("_ViewProjection", camera.projectionMatrix() * camera.viewMatrix());
         for (int i = 0; i < (monkeyAmount.x + monkeyAmount.y); i++) {
@@ -154,7 +158,7 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
 		for (int i = 0; i < monkeyAmount.x; i++) {
             lightOrb.setVec3("_Color", pointLights[i].color);
 			for (int y = 0; y < monkeyAmount.y; y++) {
-                lightOrb.setMat4("_Model", glm::translate(glm::vec3(i * transformMultiplier, 0, y * transformMultiplier)));
+                lightOrb.setMat4("_Model", glm::translate(glm::vec3(i * transformMultiplier, 1.5f, y * transformMultiplier)));
                 sphere.draw();
 			}
 		}
@@ -179,7 +183,7 @@ int main() {
     ew::Shader lightOrb = ew::Shader("assets/lightOrb.vert", "assets/lightOrb.frag");
     ew::Model monkeyModel = ew::Model("assets/suzanne.obj");
    
-    sphereMesh = ew::Mesh(ew::createSphere(1.0f, 8));
+    sphereMesh = ew::Mesh(ew::createSphere(0.2f, 8));
     plane.load(ew::createPlane(50.f, 50.f, 100));
 
     camera.position = glm::vec3(0.0f, 0.0f, 5.0f);
