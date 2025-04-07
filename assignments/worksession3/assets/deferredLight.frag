@@ -39,7 +39,7 @@ float attenateExponential(float dist, float radius) {
 }
 
 vec3 calcPointLight(PointLight light, vec3 normal, vec3 pos) {
-	vec3 diff = light.pos;
+	vec3 diff = light.pos - pos;
 
 	vec3 toLight = normalize(diff);
 	float diffuseFactor = max(dot(normal, toLight), 0.0);
@@ -53,7 +53,7 @@ vec3 calcPointLight(PointLight light, vec3 normal, vec3 pos) {
 	lightColor += _AmbientColor * _Material.ambient;
 
 	float d = length(diff);
-	lightColor *= attenateExponential(d, light.radius);
+	lightColor *= attenateExponential(d, 4);
 	return lightColor;
 }
 
@@ -68,5 +68,5 @@ void main() {
 	}
 
 	vec3 albedo = texture(FragAlbedo, UV).rgb;
-	FragColor = vec4(albedo, 1.0);
+	FragColor = vec4(albedo * totalLight, 1.0);
 }

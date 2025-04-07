@@ -69,8 +69,8 @@ struct GBuffer {
 
 struct PointLight {
     glm::vec3 pos;
-    glm::vec3 color = glm::vec3(0.0, 0.0, 1.0);
-    float radius;
+    glm::vec3 color = glm::vec3(1.0, 0.0, 0.0);
+    float radius = 4;
 };
 
 const int MAX_POINT_LIGHTS = 1024;
@@ -104,13 +104,17 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
 
         for (int i = 0; i < monkeyAmount.x; i++) {
             for (int y = 0; y < monkeyAmount.y; y++) {
+                // Tristan gave index math
+                pointLights[i * (int)monkeyAmount.x + y].pos = glm::vec3(i * transformMultiplier, 1.5, y * transformMultiplier);
                 shader.setMat4("_Model", glm::translate(glm::vec3(i * transformMultiplier, 0, y * transformMultiplier)));              
                 model.draw();
             }
         }
+
         planeTransform.position = glm::vec3(0, -2, 0);
         shader.setMat4("_Model", planeTransform.modelMatrix());
         plane.draw();
+
     } glBindFramebuffer(GL_FRAMEBUFFER, 0); {
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -132,9 +136,9 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
         deferred.setInt("FragNormal", 1);
         deferred.setInt("FragAlbedo", 2);
        
-        for (int i = 0; i < MAX_POINT_LIGHTS; i++) {
-            std::string prefix = "_Lights[" + std::to_string(i) + "].";
-            deferred.setVec3(prefix + "position", pointLights[i].pos);
+        for (int i = 0; i < monkeyAmount.x * monkeyAmount.y; i++) {
+            std::string prefix = "_PointLights[" + std::to_string(i) + "].";
+            deferred.setVec3(prefix + "pos", pointLights[i].pos);
             deferred.setVec3(prefix + "color", pointLights[i].color);
             deferred.setFloat(prefix + "radius", pointLights[i].radius);
             deferred.setFloat("_Material.ambient", material.ambient);
@@ -193,7 +197,7 @@ int main() {
 
     framebuffer = jk::createGTAFramebuffer(screenWidth, screenHeight, GL_RG16F);
 
-    for (int i = 0; i < (monkeyAmount.x + monkeyAmount.y); i++) {
+    for (int i = 0; i < (monkeyAmount.x * monkeyAmount.y); i++) {
         pointLights[i].color = getLightColor();
     }
 
@@ -247,6 +251,13 @@ void drawUI() {
     int collectedAmount = monkeyAmount.x * monkeyAmount.y;
     ImGui::Text("Amount of Suzannes: ");
     ImGui::Text("%s", std::to_string(collectedAmount).c_str());
+
+    if (ImGui::CollapsingHeader("Material")) {
+        ImGui::SliderFloat("Ambient", &material.ambient, 0.0f, 1.0f);
+        ImGui::SliderFloat("Diffuse", &material.diffuse, 0.0f, 1.0f);
+        ImGui::SliderFloat("Specular", &material.specular, 0.0f, 1.0f);
+        ImGui::SliderFloat("Shininess", &material.shiness, 2.0f, 1024.0f);
+    }
    
     ImGui::End();
 
