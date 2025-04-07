@@ -69,7 +69,7 @@ struct GBuffer {
 
 struct PointLight {
     glm::vec3 pos;
-    glm::vec3 color = glm::vec3(1.0, 0.0, 0.0);
+    glm::vec3 color;
     float radius = 4;
 };
 
@@ -149,19 +149,20 @@ void querty(ew::Shader shader, ew::Shader deferred, ew::Shader lightOrb, ew::Mod
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
-
+        glBlitFramebuffer(0, 0, screenWidth, screenHeight, 0, 0, screenWidth, screenHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         glEnable(GL_DEPTH_TEST);
+
         lightOrb.use();
         lightOrb.setMat4("_ViewProjection", camera.projectionMatrix() * camera.viewMatrix());
-        for (int i = 0; i < (monkeyAmount.x + monkeyAmount.y); i++) {
+        for (int i = 0; i < (monkeyAmount.x * monkeyAmount.y); i++) {
             glm::mat4 m = glm::mat4(1.0f);
             m = glm::translate(m, glm::vec3(pointLights[i].pos.x, pointLights[i].pos.y + 5, pointLights[i].pos.z));
             m = glm::scale(m, glm::vec3(0.2f));
         }
 
 		for (int i = 0; i < monkeyAmount.x; i++) {
-            lightOrb.setVec3("_Color", pointLights[i].color);
 			for (int y = 0; y < monkeyAmount.y; y++) {
+                lightOrb.setVec3("_Color", pointLights[i].color);
                 lightOrb.setMat4("_Model", glm::translate(glm::vec3(i * transformMultiplier, 1.5f, y * transformMultiplier)));
                 sphere.draw();
 			}
